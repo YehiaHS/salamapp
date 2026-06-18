@@ -1,0 +1,53 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+    
+    <!-- Circular Marble Base Plinth -->
+    <path
+        android:fillColor="#EDEDED"
+        android:strokeColor="#DDDDDD"
+        android:strokeWidth="1"
+        android:pathData="M 30,75 A 30,14 0 1,0 90,75 A 30,14 0 1,0 30,75" />
+    
+    <!-- Plinth Shadow edge -->
+    <path
+        android:fillColor="#E2E2E2"
+        android:pathData="M 30,75 A 30,14 0 0,0 90,75 L 90,78 A 30,14 0 0,1 30,78 Z" />
+
+    <!-- Kaaba Left Wall (Shadow Side - Dark Charcoal) -->
+    <path
+        android:fillColor="#151515"
+        android:pathData="M 60,38 L 43,48 L 43,74 L 60,67 Z" />
+
+    <!-- Kaaba Right Wall (Lit Side - Lighter Charcoal) -->
+    <path
+        android:fillColor="#292929"
+        android:pathData="M 60,38 L 77,48 L 77,74 L 60,67 Z" />
+
+    <!-- Kaaba Roof (Near Black top face) -->
+    <path
+        android:fillColor="#1C1C1C"
+        android:pathData="M 60,38 L 43,48 L 60,57 L 77,48 Z" />
+
+    <!-- Kaaba Golden Door (Kiswa Door) -->
+    <path
+        android:fillColor="#E5B233"
+        android:pathData="M 65,54 L 72,58 L 72,69 L 65,65 Z" />
+    
+    <!-- Kaaba Golden Door Details -->
+    <path
+        android:fillColor="#C6941C"
+        android:pathData="M 67,56 L 70,58 L 70,67 L 67,65 Z" />
+
+    <!-- Kiswa Gold Belt (Embroidery running near the top edge) -->
+    <!-- Left Kiswa Belt -->
+    <path
+        android:fillColor="#D8A52B"
+        android:pathData="M 43,53 L 60,44 L 60,46 L 43,55 Z" />
+    <!-- Right Kiswa Belt -->
+    <path
+        android:fillColor="#D8A52B"
+        android:pathData="M 60,44 L 77,53 L 77,55 L 60,46 Z" />
+</vector>

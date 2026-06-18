@@ -1,0 +1,48 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="220dp"
+    android:height="220dp"
+    android:viewportWidth="220"
+    android:viewportHeight="220">
+    
+    <!-- Outer faint scale ring -->
+    <path
+        android:strokeColor="#0C000000"
+        android:strokeWidth="1"
+        android:pathData="M110,110m-105,0a105,105 0 1,1 210,0a105,105 0 1,1 -210,0" />
+        
+    <!-- Main purple loop (facing color of Qibla) -->
+    <path
+        android:strokeColor="#6750A4"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:pathData="M110,110m-85,0a85,85 0 1,1 170,0a85,85 0 1,1 -170,0" />
+
+    <!-- Inner guide ring -->
+    <path
+        android:strokeColor="#0F000000"
+        android:strokeWidth="1.5"
+        android:pathData="M110,110m-70,0a70,70 0 1,1 140,0a70,70 0 1,1 -140,0" />
+
+    <!-- North marker triangle indicator -->
+    <path
+        android:fillColor="#6750A4"
+        android:pathData="M110,16 L104,25 L116,25 Z" />
+
+    <!-- Degree ticks at major angles (0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330) -->
+    <path
+        android:strokeColor="#6750A4"
+        android:strokeWidth="1.5"
+        android:pathData="
+            M110,25 L110,30
+            M110,190 L110,195
+            M25,110 L30,110
+            M190,110 L195,110
+            M67.5,36.4 L70,40.7
+            M152.5,36.4 L150,40.7
+            M67.5,183.6 L70,179.3
+            M152.5,183.6 L150,179.3
+            M36.4,67.5 L40.7,70
+            M36.4,152.5 L40.7,150
+            M183.6,67.5 L179.3,70
+            M183.6,152.5 L179.3,150" />
+</vector>

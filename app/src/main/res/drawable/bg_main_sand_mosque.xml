@@ -1,0 +1,40 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="360dp"
+    android:height="240dp"
+    android:viewportWidth="360"
+    android:viewportHeight="240">
+    
+    <!-- Background sand landscape -->
+    <!-- Distant Dune (Left background) -->
+    <path
+        android:fillColor="#E3D7CB"
+        android:pathData="M0,240 L0,210 C100,190 200,218 360,195 L360,240 Z" />
+
+    <!-- Distant Mosque architecture on the right -->
+    <!-- Main Dome -->
+    <path
+        android:fillColor="#DDCFC0"
+        android:pathData="M250,210 C250,182 272,170 282,170 C292,170 314,182 314,210 Z" />
+    <!-- Small Left Dome -->
+    <path
+        android:fillColor="#D8C9BA"
+        android:pathData="M232,210 C232,192 245,182 252,182 C259,182 272,192 272,210 Z" />
+    <!-- Minaret 1 -->
+    <path
+        android:fillColor="#DDCFC0"
+        android:pathData="M222,210 L222,150 L225,145 L225,135 L222,135 L222,125 L225,120 L225,210 Z" />
+    <!-- Minaret 2 -->
+    <path
+        android:fillColor="#DDCFC0"
+        android:pathData="M318,210 L318,140 L321,135 L321,125 L318,125 L318,115 L321,110 L321,210 Z" />
+
+    <!-- Dune 2 (Foreground dunes) -->
+    <path
+        android:fillColor="#EADED4"
+        android:pathData="M0,240 C90,215 220,205 360,218 L360,240 Z" />
+
+    <!-- Closer buildings in bottom right corner -->
+    <path
+        android:fillColor="#DFD2C5"
+        android:pathData="M280,240 L280,215 L315,215 L315,240 Z M315,240 L315,205 L355,205 L355,240 Z M293,215 C293,205 303,200 303,200 C303,200 313,205 313,215 Z" />
+</vector>

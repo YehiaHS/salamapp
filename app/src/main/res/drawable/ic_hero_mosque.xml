@@ -1,0 +1,41 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="280dp"
+    android:height="120dp"
+    android:viewportWidth="280"
+    android:viewportHeight="120">
+    
+    <!-- Central Main Dome -->
+    <path
+        android:fillColor="#EFE5DB"
+        android:pathData="M110,120 C110,85 130,70 145,70 C145,70 145,63 145,63 L146,63 C146,63 146,70 146,70 C161,70 181,85 181,120 Z" />
+    
+    <!-- Left Mid Dome -->
+    <path
+        android:fillColor="#E5DACF"
+        android:pathData="M75,120 C75,95 90,83 102,83 C102,83 102,77 102,77 L103,77 C103,77 103,83 103,83 C115,83 130,95 130,120 Z" />
+
+    <!-- Right Small Dome -->
+    <path
+        android:fillColor="#E5DACF"
+        android:pathData="M165,120 C165,100 177,90 187,90 C187,90 187,85 187,85 L188,85 C188,85 188,90 188,90 C198,90 210,100 210,120 Z" />
+
+    <!-- Left High Minaret -->
+    <path
+        android:fillColor="#EFE5DB"
+        android:pathData="M60,120 L60,50 L63,45 L63,30 L60,30 L60,20 L63,15 L63,5 L64,0 L65,5 L65,15 L68,20 L68,30 L65,30 L65,45 L68,50 L68,120 Z" />
+    
+    <!-- Right High Minaret -->
+    <path
+        android:fillColor="#EFE5DB"
+        android:pathData="M215,120 L215,55 L218,50 L218,35 L215,35 L215,25 L218,20 L218,10 L219,5 L220,10 L220,20 L223,25 L223,35 L220,35 L220,50 L223,55 L223,120 Z" />
+
+    <!-- Far Left Thin Minaret -->
+    <path
+        android:fillColor="#D8CDCE"
+        android:pathData="M35,120 L35,65 L37,62 L37,45 L35,45 L35,38 L37,35 L37,28 L38,25 L39,28 L39,35 L41,38 L41,45 L39,45 L39,62 L41,65 L41,120 Z" />
+
+    <!-- Far Right Thin Minaret -->
+    <path
+        android:fillColor="#D8CDCE"
+        android:pathData="M245,120 L245,70 L247,67 L247,50 L245,50 L245,43 L247,40 L247,33 L248,30 L249,33 L249,40 L251,43 L251,50 L249,50 L249,67 L251,70 L251,120 Z" />
+</vector>
