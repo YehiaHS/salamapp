@@ -227,16 +227,12 @@ fun SalamCard(
     }
 
     val cardModifier = modifier
-        .shadow(
-            elevation = when (elevation) {
-                1 -> 2.dp
-                3 -> 10.dp
-                else -> 5.dp
-            },
-            shape = shape,
-            ambientColor = palette.primary.copy(alpha = 0.10f),
-            spotColor = palette.primary.copy(alpha = 0.14f)
-        )
+
+    val shadowElevation = when (elevation) {
+        1 -> 2.dp
+        3 -> 10.dp
+        else -> 5.dp
+    }
 
     if (onClick != null) {
         val interactionSource = remember { MutableInteractionSource() }
@@ -251,7 +247,12 @@ fun SalamCard(
             shape = shape,
             colors = CardDefaults.cardColors(containerColor = containerColor),
             border = border,
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            elevation = CardDefaults.cardElevation(
+                defaultElevation = shadowElevation,
+                pressedElevation = shadowElevation * 0.5f,
+                focusedElevation = shadowElevation,
+                hoveredElevation = shadowElevation
+            ),
             content = content
         )
     } else {
@@ -260,7 +261,7 @@ fun SalamCard(
             shape = shape,
             colors = CardDefaults.cardColors(containerColor = containerColor),
             border = border,
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = shadowElevation),
             content = content
         )
     }

@@ -14,6 +14,7 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,7 +29,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Menu
@@ -36,6 +40,14 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.NotificationsOff
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material.icons.filled.WbTwilight
+import androidx.compose.material.icons.filled.NightsStay
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -110,6 +122,28 @@ fun MainScreen(
 
     var showLocationDialog by remember { mutableStateOf(false) }
 
+    val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val cityName = remember(lat, lng) {
+        try {
+            val geocoder = android.location.Geocoder(context, Locale.getDefault())
+            val addresses = geocoder.getFromLocation(lat, lng, 1)
+            if (!addresses.isNullOrEmpty()) {
+                val address = addresses[0]
+                val city = address.locality ?: address.subAdminArea ?: address.adminArea
+                val country = address.countryName
+                if (city != null && country != null) {
+                    "$city, $country"
+                } else city ?: country ?: "Karachi, Pakistan"
+            } else {
+                "Karachi, Pakistan"
+            }
+        } catch (e: Exception) {
+            "Karachi, Pakistan"
+        }
+    }
+
     // Today's Hijri Date
     val todayHijri = remember { HijriCalendar.getTodayHijri() }
     val hijriStr = remember(todayHijri) { HijriCalendar.formatHijriDate(todayHijri) }
@@ -126,22 +160,11 @@ fun MainScreen(
     }
 
     SalamScreenScaffold(
-        showGeometricPattern = false,
+        showGeometricPattern = true,
         backgroundBrush = SolidColor(palette.background)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             
-            // Anchored bottom sand dunes and mosque vector illustration overlay
-            Image(
-                painter = painterResource(id = com.yehia.prayertimes.R.drawable.bg_main_sand_mosque),
-                contentDescription = null,
-                contentScale = ContentScale.FillWidth,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.BottomCenter)
-                    .graphicsLayer(alpha = 0.65f)
-            )
-
             Column(modifier = Modifier.fillMaxSize()) {
                 
                 // High fidelity sand-parchment top header row
@@ -152,27 +175,12 @@ fun MainScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Left Menu Badge
-                    Box(
-                        modifier = Modifier
-                            .size(44.dp)
-                            .clip(CircleShape)
-                            .background(palette.surface, CircleShape)
-                            .salamClickable { showLocationDialog = true }
-                            .padding(10.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Menu,
-                            contentDescription = "Coordinates Menu",
-                            tint = palette.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-
-                    // Central Salam Branding
+                    // Central Salam Branding aligned left
                     Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(start = SalamSpacing.cardPaddingInner),
+                        horizontalAlignment = Alignment.Start
                     ) {
                         Text(
                             text = "Assalamu Alaikum 👋",
@@ -262,7 +270,8 @@ fun MainScreen(
                     ActivePrayerHero(
                         data = data,
                         countdownStrState = countdownStrState,
-                        progressState = progressState
+                        cityName = cityName,
+                        onLocationClick = { showLocationDialog = true }
                     )
                 }
 
@@ -278,6 +287,7 @@ fun MainScreen(
                     }
 
                     LazyColumn(
+                        state = listState,
                         modifier = Modifier
                             .fillMaxWidth()
                             .weight(1f)
@@ -296,7 +306,7 @@ fun MainScreen(
                             )
                         }
                         item {
-                            Spacer(modifier = Modifier.height(SalamSpacing.sectionGap))
+                            Spacer(modifier = Modifier.height(100.dp))
                         }
                     }
                 }
@@ -355,14 +365,12 @@ fun MainScreen(
 fun ActivePrayerHero(
     data: PrayerCalculationResult,
     countdownStrState: State<String>,
-    progressState: State<Float>
+    cityName: String,
+    onLocationClick: () -> Unit
 ) {
     val palette by ThemeManager.currentPalette.collectAsState()
 
     val context = LocalContext.current
-    var athanEnabled by remember {
-        mutableStateOf(NotificationHelper.getAthanPreference(context))
-    }
 
     // Dynamic infinite breath glow for the celestial sun/moon aura
     val infiniteTransition = rememberInfiniteTransition(label = "celestialGlow")
@@ -379,7 +387,7 @@ fun ActivePrayerHero(
     SalamCard(
         modifier = Modifier
             .fillMaxWidth()
-            .height(220.dp),
+            .height(260.dp),
         elevation = 3,
         shape = SalamShapes.squircle
     ) {
@@ -452,31 +460,46 @@ fun ActivePrayerHero(
                             cx = size.width * (0.08f + 0.84f * progress)
                             cy = size.height * (0.75f - 0.52f * kotlin.math.sin(progress * Math.PI).toFloat())
                             
-                            // Draw crescent moon with breathing soft shadow
-                            val r = 15.dp.toPx()
-                            
                             // Moon aura glow
                             drawCircle(
                                 color = illustrationPalette.glowColor.copy(alpha = 0.12f),
                                 radius = 24.dp.toPx() * glowPulse,
                                 center = Offset(cx, cy)
                             )
+
+                            // 1. Draw the dark unilluminated disk of the moon (earthshine)
+                            val r = 15.dp.toPx()
+                            drawCircle(
+                                color = illustrationPalette.moonColor.copy(alpha = 0.15f),
+                                radius = r,
+                                center = Offset(cx, cy)
+                            )
                             
+                            // 2. Draw the dynamically calculated illuminated phase of the moon based on Hijri day
+                            val hijriDay = try {
+                                com.yehia.prayertimes.utils.HijriCalendar.getTodayHijri().day
+                            } catch (e: Exception) {
+                                15 // Fallback to full moon
+                            }
+
+                            val isWaxing = hijriDay <= 15
+                            val f = if (isWaxing) {
+                                1f - 2f * (hijriDay - 1f) / 14f
+                            } else {
+                                -1f + 2f * (hijriDay - 15f) / 15f
+                            }
+
                             val moonPath = Path().apply {
                                 moveTo(cx, cy - r)
                                 arcTo(
                                     rect = Rect(cx - r, cy - r, cx + r, cy + r),
                                     startAngleDegrees = -90f,
-                                    sweepAngleDegrees = 180f,
+                                    sweepAngleDegrees = if (isWaxing) 180f else -180f,
                                     forceMoveTo = false
                                 )
-                                val offset = 5.dp.toPx()
-                                arcTo(
-                                    rect = Rect(cx - r + offset, cy - r, cx + r + offset, cy + r),
-                                    startAngleDegrees = 90f,
-                                    sweepAngleDegrees = -180f,
-                                    forceMoveTo = false
-                                )
+                                // Draw inner shadow boundary using quadratic bezier curve
+                                val controlX = cx + r * f
+                                quadraticBezierTo(controlX, cy, cx, cy - r)
                                 close()
                             }
                             drawPath(moonPath, illustrationPalette.moonColor.copy(alpha = 0.9f))
@@ -489,31 +512,41 @@ fun ActivePrayerHero(
                 painter = painterResource(id = com.yehia.prayertimes.R.drawable.ic_hero_mosque),
                 contentDescription = null,
                 contentScale = ContentScale.FillWidth,
-                colorFilter = ColorFilter.tint(illustrationPalette.buildingColor.copy(alpha = 0.05f)), // Extreme opacity reduction
+                colorFilter = ColorFilter.tint(illustrationPalette.buildingColor.copy(alpha = 0.15f)), // Increased opacity slightly for readability, low enough to avoid text clashes
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(80.dp) // Strictly limit layout height to stay below text
+                    .height(120.dp) // Increased height to prevent cutting off
                     .align(Alignment.BottomCenter)
             )
 
             // 4. Hero text layout and progress clock
-            Row(
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(SalamSpacing.cardPaddingInnerLarge),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.SpaceBetween
             ) {
+                // Top part: details with drop shadow for premium celestial look
+                val textShadow = androidx.compose.ui.graphics.Shadow(
+                    color = Color.Black.copy(alpha = 0.5f),
+                    offset = Offset(0f, 4f),
+                    blurRadius = 8f
+                )
+
                 Column(
-                    modifier = Modifier.weight(1.0f),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(start = 12.dp),
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = LanguageManager.get("next_prayer"),
-                        style = MaterialTheme.typography.labelLarge.copy(
+                        text = LanguageManager.get("next_prayer").uppercase(),
+                        style = MaterialTheme.typography.labelMedium.copy(
                             color = palette.accent,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp
+                            fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = 1.5.sp,
+                            shadow = textShadow
                         )
                     )
                     Spacer(modifier = Modifier.height(2.dp))
@@ -521,8 +554,10 @@ fun ActivePrayerHero(
                         text = data.nextPrayer?.let { LanguageManager.get(it.type.name.lowercase()) } ?: LanguageManager.get("fajr"),
                         style = MaterialTheme.typography.headlineLarge.copy(
                             color = palette.textPrimary,
-                            fontWeight = FontWeight.ExtraBold,
-                            fontFamily = androidx.compose.ui.text.font.FontFamily.Serif
+                            fontWeight = FontWeight.Black,
+                            fontSize = 42.sp,
+                            fontFamily = androidx.compose.ui.text.font.FontFamily.Serif,
+                            shadow = textShadow
                         )
                     )
                     Spacer(modifier = Modifier.height(2.dp))
@@ -531,75 +566,59 @@ fun ActivePrayerHero(
                         countdownStrState = countdownStrState,
                         style = MaterialTheme.typography.displayMedium.copy(
                             fontWeight = FontWeight.Black,
-                            color = palette.textPrimary
+                            color = palette.textPrimary,
+                            fontSize = 54.sp,
+                            shadow = textShadow
                         )
                     )
                     
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = "${LanguageManager.get("now")}: ${data.currentPrayer?.let { LanguageManager.get(it.type.name.lowercase()) } ?: LanguageManager.get("isha")}",
-                        style = MaterialTheme.typography.bodyMedium.copy(
+                        style = MaterialTheme.typography.titleMedium.copy(
                             color = palette.accent,
-                            fontWeight = FontWeight.Medium
+                            fontWeight = FontWeight.Bold,
+                            shadow = textShadow
                         )
                     )
                 }
 
-                // Smooth Circular Countdown Widget
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Bottom part: Location pill
                 Box(
-                    modifier = Modifier.size(90.dp),
-                    contentAlignment = Alignment.Center
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Box(
+                    Row(
                         modifier = Modifier
-                            .fillMaxSize()
-                            .drawBehind {
-                                drawCircle(
-                                    color = palette.textPrimary.copy(alpha = 0.15f),
-                                    style = Stroke(width = 6.dp.toPx())
-                                )
-                            }
-                    )
-
-                    ProgressArc(
-                        progressState = progressState,
-                        color = palette.primary
-                    )
-
-                    FriendlyRemainingText(
-                        countdownStrState = countdownStrState,
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            fontWeight = FontWeight.Black,
-                            color = palette.textPrimary
+                            .background(Color(0xFF221F38).copy(alpha = 0.4f), RoundedCornerShape(50))
+                            .border(0.5.dp, palette.outline.copy(alpha = 0.3f), RoundedCornerShape(50))
+                            .clickable { onLocationClick() }
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                            .align(Alignment.CenterStart),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.LocationOn,
+                            contentDescription = "Location",
+                            tint = palette.primary,
+                            modifier = Modifier.size(12.dp)
                         )
-                    )
-                }
-            }
-
-            // 5. Floating Adhan mute/unmute circular badge at bottom right boundary
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(end = 16.dp, bottom = 12.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(palette.primary, CircleShape)
-                        .salamClickable {
-                            athanEnabled = !athanEnabled
-                            NotificationHelper.saveAthanPreference(context, athanEnabled)
-                            NotificationHelper.schedulePrayerAlarms(context)
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = if (athanEnabled) Icons.Default.NotificationsActive else Icons.Default.NotificationsOff,
-                        contentDescription = "Adhan Volume",
-                        tint = palette.background,
-                        modifier = Modifier.size(18.dp)
-                    )
+                        Text(
+                            text = cityName,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                color = palette.textSecondary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        )
+                        Icon(
+                            imageVector = Icons.Default.KeyboardArrowRight,
+                            contentDescription = "Chevron",
+                            tint = palette.textMuted,
+                            modifier = Modifier.size(12.dp)
+                        )
+                    }
                 }
             }
         }
@@ -680,6 +699,55 @@ fun ProgressArc(
     )
 }
 
+data class PrayerStyleInfo(
+    val subtitle: String,
+    val icon: ImageVector,
+    val iconColor: Color,
+    val badgeBgColor: Color
+)
+
+@Composable
+fun getPrayerStyleInfo(type: PrayerType): PrayerStyleInfo {
+    return when (type) {
+        PrayerType.FAJR -> PrayerStyleInfo(
+            subtitle = "Dawn",
+            icon = Icons.Default.WbTwilight,
+            iconColor = Color(0xFFFFB74D), // Soft orange
+            badgeBgColor = Color(0xFFE65100).copy(alpha = 0.15f)
+        )
+        PrayerType.SUNRISE -> PrayerStyleInfo(
+            subtitle = "Sunrise",
+            icon = Icons.Default.WbTwilight,
+            iconColor = Color(0xFFFFB74D), // Soft gold/orange
+            badgeBgColor = Color(0xFFF57C00).copy(alpha = 0.15f)
+        )
+        PrayerType.DHUHR -> PrayerStyleInfo(
+            subtitle = "Midday",
+            icon = Icons.Default.WbSunny,
+            iconColor = Color(0xFFFFD54F), // Golden yellow
+            badgeBgColor = Color(0xFFFBC02D).copy(alpha = 0.15f)
+        )
+        PrayerType.ASR -> PrayerStyleInfo(
+            subtitle = "Afternoon",
+            icon = Icons.Default.WbSunny,
+            iconColor = Color(0xFFFF8A65), // Warm orange
+            badgeBgColor = Color(0xFFE64A19).copy(alpha = 0.15f)
+        )
+        PrayerType.MAGHRIB -> PrayerStyleInfo(
+            subtitle = "Sunset",
+            icon = Icons.Default.WbTwilight,
+            iconColor = Color(0xFFE57373), // Red/rose
+            badgeBgColor = Color(0xFFD32F2F).copy(alpha = 0.15f)
+        )
+        PrayerType.ISHA -> PrayerStyleInfo(
+            subtitle = "Night",
+            icon = Icons.Default.NightsStay,
+            iconColor = Color(0xFFB39DDB), // Light purple
+            badgeBgColor = Color(0xFF512DA8).copy(alpha = 0.15f)
+        )
+    }
+}
+
 @Composable
 fun PrayerTimeRow(
     item: PrayerTimeItem,
@@ -688,7 +756,7 @@ fun PrayerTimeRow(
     index: Int
 ) {
     val palette by ThemeManager.currentPalette.collectAsState()
-    val illustrationPalette = palette.toIllustrationPalette()
+    val styleInfo = getPrayerStyleInfo(item.type)
 
     // Dynamic scale spring anim for highlight
     val scale by animateFloatAsState(
@@ -700,83 +768,117 @@ fun PrayerTimeRow(
         label = "activeScale"
     )
 
-    val shape = if (index % 2 == 0) SalamShapes.expressiveCorner1 else SalamShapes.expressiveCorner2
-    // Enforce pure white card face background with gentle purple accent line for active row
+    // Enforce constant rounded corner shape matching mockup
+    val shape = RoundedCornerShape(16.dp)
+
     SalamCard(
         modifier = Modifier
             .fillMaxWidth()
-            .height(72.dp)
+            .height(76.dp)
             .staggeredEntrance(index)
             .scale(scale),
         elevation = if (isActive) 3 else 2,
         isActive = isActive,
         shape = shape
     ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 14.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = SalamSpacing.cardPaddingInner),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(12.dp)
-                            .background(
-                                color = if (isActive) palette.primary else palette.textMuted.copy(alpha = 0.4f),
-                                shape = CircleShape
-                            )
+                // Circular icon badge matching the mockup
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(palette.background.copy(alpha = 0.5f), CircleShape)
+                        .border(1.dp, palette.outline.copy(alpha = 0.5f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = styleInfo.icon,
+                        contentDescription = null,
+                        tint = styleInfo.iconColor,
+                        modifier = Modifier.size(20.dp)
                     )
-                    Spacer(modifier = Modifier.width(SalamSpacing.cardPaddingInner))
+                }
+                
+                Spacer(modifier = Modifier.width(12.dp))
+                
+                // Stacked name/description labels
+                Column {
                     Text(
-                        text = LanguageManager.get(item.type.name.lowercase()),
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = if (isActive) FontWeight.Bold else FontWeight.Medium,
-                            color = if (isActive) palette.textPrimary else palette.textSecondary
+                        text = LanguageManager.get(item.type.name.lowercase()).replaceFirstChar {
+                            if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString()
+                        },
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = palette.textPrimary,
+                            fontSize = 15.sp
+                        )
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = styleInfo.subtitle,
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            color = palette.textSecondary,
+                            fontSize = 11.sp
                         )
                     )
                 }
+            }
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Text(
-                        text = item.formattedTime,
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                            color = if (isActive) palette.primary else palette.textPrimary
-                        )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Bold time text (colored palette.primary if active, else palette.textPrimary)
+                Text(
+                    text = item.formattedTime,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = if (isActive) palette.primary else palette.textPrimary,
+                        fontSize = 15.sp
                     )
-                    
-                    // Worship tracking checkmark or active alerts bell
+                )
+
+                // Right checkmark or active alerts bell circular badge
+                Box(
+                    modifier = Modifier
+                        .size(26.dp)
+                        .background(
+                            color = if (isActive) palette.primary else Color.Transparent,
+                            shape = CircleShape
+                        )
+                        .border(
+                            width = 1.dp,
+                            color = if (isActive) palette.primary else palette.outline,
+                            shape = CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
                     if (isPast) {
-                        Box(
-                            modifier = Modifier
-                                .size(22.dp)
-                                .background(illustrationPalette.badgeBg, CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Check,
-                                contentDescription = "Completed",
-                                tint = illustrationPalette.badgeText,
-                                modifier = Modifier.size(12.dp)
-                            )
-                        }
-                    } else if (isActive) {
                         Icon(
-                            imageVector = Icons.Default.Notifications,
-                            contentDescription = "Active Notification",
-                            tint = palette.primary,
-                            modifier = Modifier.size(18.dp)
+                            imageVector = Icons.Default.Check,
+                            contentDescription = "Completed",
+                            tint = if (isActive) palette.onPrimary else palette.primary,
+                            modifier = Modifier.size(14.dp)
                         )
                     } else {
-                        // Empty placeholder spacer to align layout edges
-                        Spacer(modifier = Modifier.width(22.dp))
+                        Icon(
+                            imageVector = if (isActive) Icons.Default.NotificationsActive else Icons.Default.Notifications,
+                            contentDescription = if (isActive) "Active Alert" else "Upcoming Alert",
+                            tint = if (isActive) palette.onPrimary else palette.textMuted.copy(alpha = 0.5f),
+                            modifier = Modifier.size(14.dp)
+                        )
                     }
                 }
             }
         }
+    }
 }

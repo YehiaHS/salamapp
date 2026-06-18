@@ -113,7 +113,7 @@ fun DhikrScreen() {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 12.dp),
+                .padding(start = SalamSpacing.cardPaddingInner, end = SalamSpacing.cardPaddingInner, bottom = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -201,21 +201,21 @@ fun DhikrScreen() {
                 // Curve measurements & caching
                 val pathData = remember(widthPx, heightPx) {
                     val path = Path().apply {
-                        moveTo(widthPx * 0.12f, heightPx * 0.85f)
+                        moveTo(widthPx * 0.12f, heightPx * 0.75f)
                         cubicTo(
-                            widthPx * 0.35f, heightPx * 0.88f,
-                            widthPx * 0.88f, heightPx * 0.78f,
-                            widthPx * 0.84f, heightPx * 0.65f
+                            widthPx * 0.35f, heightPx * 0.78f,
+                            widthPx * 0.88f, heightPx * 0.68f,
+                            widthPx * 0.84f, heightPx * 0.55f
                         )
                         cubicTo(
-                            widthPx * 0.80f, heightPx * 0.50f,
-                            widthPx * 0.38f, heightPx * 0.54f,
-                            widthPx * 0.48f, heightPx * 0.42f
+                            widthPx * 0.80f, heightPx * 0.40f,
+                            widthPx * 0.38f, heightPx * 0.44f,
+                            widthPx * 0.48f, heightPx * 0.32f
                         )
                         cubicTo(
-                            widthPx * 0.58f, heightPx * 0.30f,
-                            widthPx * 0.90f, heightPx * 0.34f,
-                            widthPx * 1.15f, heightPx * 0.30f
+                            widthPx * 0.58f, heightPx * 0.20f,
+                            widthPx * 0.90f, heightPx * 0.24f,
+                            widthPx * 1.15f, heightPx * 0.20f
                         )
                     }
                     val pathMeasure = android.graphics.PathMeasure(path.asAndroidPath(), false)
@@ -251,9 +251,16 @@ fun DhikrScreen() {
                     val tasselDirY = -startTan[1]
                     val tasselLength = 44.dp.toPx()
 
-                    // Tassel cap
+                    // Tassel cap and threads matching bead theme color
+                    val tasselColor = when (selectedBeadType) {
+                        "pearl" -> Color(0xFFD9D9D9)
+                        "clay" -> Color(0xFFC0523B)
+                        "wood" -> Color(0xFFB58253)
+                        else -> palette.primary
+                    }
+
                     drawCircle(
-                        color = palette.primary,
+                        color = tasselColor,
                         radius = 8.dp.toPx(),
                         center = startPoint
                     )
@@ -264,7 +271,7 @@ fun DhikrScreen() {
                         val dy = tasselDirX * kotlin.math.sin(angleOffset) + tasselDirY * kotlin.math.cos(angleOffset)
                         val endPoint = startPoint + Offset(dx * tasselLength, dy * tasselLength)
                         drawLine(
-                            color = palette.primary.copy(alpha = 0.8f),
+                            color = tasselColor.copy(alpha = 0.8f),
                             start = startPoint,
                             end = endPoint,
                             strokeWidth = 2.dp.toPx()
@@ -420,37 +427,21 @@ fun DhikrScreen() {
             Column(
                 modifier = Modifier
                     .align(Alignment.CenterStart)
-                    .fillMaxHeight()
                     .width(190.dp)
-                    .padding(start = 4.dp),
+                    .padding(start = SalamSpacing.cardPaddingInner),
                 verticalArrangement = Arrangement.Center
             ) {
-                // Supplication Pill Badge `✨ الله أكبر`
-                Box(
-                    modifier = Modifier
-                        .background(palette.primary.copy(alpha = 0.1f), SalamShapes.pill)
-                        .border(1.dp, palette.primary.copy(alpha = 0.25f), SalamShapes.pill)
-                        .padding(horizontal = 14.dp, vertical = 6.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text(
-                            text = "✨",
-                            fontSize = 14.sp
-                        )
-                        Text(
-                            text = presets[activePresetIndex].first,
-                            fontFamily = AmiriFontFamily,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp,
-                            color = palette.primary
-                        )
-                    }
-                }
+                // Supplication text aligned, without pill container or emoji
+                Text(
+                    text = presets[activePresetIndex].first,
+                    fontFamily = AmiriFontFamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 32.sp,
+                    color = palette.primary,
+                    modifier = Modifier.padding(start = 6.dp)
+                )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 // Massive Numeric Count Text
                 Text(
@@ -473,65 +464,6 @@ fun DhikrScreen() {
                     modifier = Modifier.padding(start = 6.dp)
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Left Goal Progress Card
-                val remaining = (selectedTarget - count).coerceAtLeast(0)
-                val progressPercent = if (selectedTarget > 0) (count * 100 / selectedTarget) else 0
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(palette.surfaceVariant.copy(alpha = 0.5f), SalamShapes.cardMedium)
-                        .border(1.dp, palette.outline.copy(alpha = 0.25f), SalamShapes.cardMedium)
-                        .padding(10.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Adjust,
-                            contentDescription = "Target",
-                            tint = palette.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "$remaining more to",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    color = palette.textPrimary,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            )
-                            Text(
-                                text = "reach your goal",
-                                style = MaterialTheme.typography.labelSmall.copy(color = palette.textSecondary)
-                            )
-                        }
-
-                        // Mini progress circle with percent text
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier.size(34.dp)
-                        ) {
-                            CircularProgressIndicator(
-                                progress = { count.toFloat() / selectedTarget.toFloat() },
-                                modifier = Modifier.fillMaxSize(),
-                                color = palette.primary,
-                                strokeWidth = 2.5.dp,
-                                trackColor = palette.outline.copy(alpha = 0.2f),
-                            )
-                            Text(
-                                text = "$progressPercent%",
-                                fontSize = 8.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = palette.textPrimary
-                            )
-                        }
-                    }
-                }
             }
 
             // Top-Right Settings Popup Dialog Card

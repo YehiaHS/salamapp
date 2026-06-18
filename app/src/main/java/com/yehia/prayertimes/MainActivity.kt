@@ -14,7 +14,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.border
+import androidx.compose.ui.graphics.Color
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -27,6 +31,7 @@ import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.TouchApp
 
 import androidx.compose.material3.*
+import androidx.compose.ui.res.painterResource
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -52,7 +57,7 @@ enum class AppTab {
 }
 
 enum class MoreSubScreen {
-    NONE, QIBLA, HADITH, HIJRI, SETTINGS, TRACKER, NAMES, HAJJ_UMRAH, ZAKAT, AI_DEEN, LOCATOR, CUSTOM_THEME
+    NONE, QIBLA, HADITH, HIJRI, SETTINGS, TRACKER, NAMES, HAJJ_UMRAH, ZAKAT, ABOUT_DEVELOPER, LOCATOR, CUSTOM_THEME
 }
 
 class MainActivity : ComponentActivity() {
@@ -150,14 +155,12 @@ class MainActivity : ComponentActivity() {
                                 modifier = Modifier
                                     .padding(start = 16.dp, end = 16.dp, bottom = 12.dp)
                                     .navigationBarsPadding()
-                                    .height(72.dp)
+                                    .height(80.dp)
                                     .shadow(
                                         elevation = 12.dp,
-                                        shape = SalamShapes.squircle,
-                                        ambientColor = palette.primary.copy(alpha = 0.16f),
-                                        spotColor = palette.primary.copy(alpha = 0.18f)
+                                        shape = SalamShapes.expressiveCorner2
                                     )
-                                    .clip(SalamShapes.squircle)
+                                    .clip(SalamShapes.expressiveCorner2)
                                     .drawBehind {
                                         drawCircle(
                                             color = palette.primary.copy(alpha = if (palette.isLight) 0.08f else 0.14f),
@@ -173,7 +176,7 @@ class MainActivity : ComponentActivity() {
                                     .border(
                                         width = 1.dp,
                                         color = palette.outline.copy(alpha = if (palette.isLight) 0.45f else 0.35f),
-                                        shape = SalamShapes.squircle
+                                        shape = SalamShapes.expressiveCorner2
                                     ),
                                 containerColor = palette.surface.copy(alpha = if (palette.isLight) 0.94f else 0.9f),
                                 tonalElevation = 0.dp
@@ -184,9 +187,9 @@ class MainActivity : ComponentActivity() {
                                     icon = { Icon(Icons.Default.Home, contentDescription = "Prayers") },
                                     label = { Text(LanguageManager.get("tab_prayers")) },
                                     colors = NavigationBarItemDefaults.colors(
-                                        selectedIconColor = palette.onPrimary,
-                                        selectedTextColor = palette.textPrimary,
-                                        indicatorColor = palette.primary,
+                                        selectedIconColor = palette.primary,
+                                        selectedTextColor = palette.primary,
+                                        indicatorColor = Color.Transparent,
                                         unselectedIconColor = palette.textMuted,
                                         unselectedTextColor = palette.textMuted
                                     )
@@ -196,11 +199,10 @@ class MainActivity : ComponentActivity() {
                                     onClick = { currentTab = AppTab.QURAN },
                                     icon = { Icon(Icons.AutoMirrored.Filled.MenuBook, contentDescription = "Quran") },
                                     label = { Text(LanguageManager.get("tab_quran")) },
-
                                     colors = NavigationBarItemDefaults.colors(
-                                        selectedIconColor = palette.onPrimary,
-                                        selectedTextColor = palette.textPrimary,
-                                        indicatorColor = palette.primary,
+                                        selectedIconColor = palette.primary,
+                                        selectedTextColor = palette.primary,
+                                        indicatorColor = Color.Transparent,
                                         unselectedIconColor = palette.textMuted,
                                         unselectedTextColor = palette.textMuted
                                     )
@@ -208,12 +210,12 @@ class MainActivity : ComponentActivity() {
                                 NavigationBarItem(
                                     selected = currentTab == AppTab.DHIKR,
                                     onClick = { currentTab = AppTab.DHIKR },
-                                    icon = { Icon(Icons.Default.TouchApp, contentDescription = "Dhikr") },
+                                    icon = { Icon(painter = painterResource(id = com.yehia.prayertimes.R.drawable.ic_tasbih), contentDescription = "Dhikr", modifier = Modifier.size(24.dp)) },
                                     label = { Text(LanguageManager.get("tab_dhikr")) },
                                     colors = NavigationBarItemDefaults.colors(
-                                        selectedIconColor = palette.onPrimary,
-                                        selectedTextColor = palette.textPrimary,
-                                        indicatorColor = palette.primary,
+                                        selectedIconColor = palette.primary,
+                                        selectedTextColor = palette.primary,
+                                        indicatorColor = Color.Transparent,
                                         unselectedIconColor = palette.textMuted,
                                         unselectedTextColor = palette.textMuted
                                     )
@@ -224,9 +226,9 @@ class MainActivity : ComponentActivity() {
                                     icon = { Icon(Icons.Default.Favorite, contentDescription = "Duas") },
                                     label = { Text(LanguageManager.get("tab_duas")) },
                                     colors = NavigationBarItemDefaults.colors(
-                                        selectedIconColor = palette.onPrimary,
-                                        selectedTextColor = palette.textPrimary,
-                                        indicatorColor = palette.primary,
+                                        selectedIconColor = palette.primary,
+                                        selectedTextColor = palette.primary,
+                                        indicatorColor = Color.Transparent,
                                         unselectedIconColor = palette.textMuted,
                                         unselectedTextColor = palette.textMuted
                                     )
@@ -240,20 +242,27 @@ class MainActivity : ComponentActivity() {
                                     icon = { Icon(Icons.Default.MoreHoriz, contentDescription = "More") },
                                     label = { Text(LanguageManager.get("tab_more")) },
                                     colors = NavigationBarItemDefaults.colors(
-                                        selectedIconColor = palette.onPrimary,
-                                        selectedTextColor = palette.textPrimary,
-                                        indicatorColor = palette.primary,
+                                        selectedIconColor = palette.primary,
+                                        selectedTextColor = palette.primary,
+                                        indicatorColor = Color.Transparent,
                                         unselectedIconColor = palette.textMuted,
                                         unselectedTextColor = palette.textMuted
                                     )
                                 )
                             }
                         }
-
                     },
                     containerColor = palette.background
                 ) { innerPadding ->
-                    Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(
+                                top = innerPadding.calculateTopPadding(),
+                                start = innerPadding.calculateStartPadding(androidx.compose.ui.unit.LayoutDirection.Ltr),
+                                end = innerPadding.calculateEndPadding(androidx.compose.ui.unit.LayoutDirection.Ltr)
+                            )
+                    ) {
                         when (currentTab) {
                             AppTab.PRAYER -> {
                                 MainScreen(
@@ -293,7 +302,7 @@ class MainActivity : ComponentActivity() {
                                             onNavigateToNames = { activeSubScreen = MoreSubScreen.NAMES },
                                             onNavigateToHajj = { activeSubScreen = MoreSubScreen.HAJJ_UMRAH },
                                             onNavigateToZakat = { activeSubScreen = MoreSubScreen.ZAKAT },
-                                            onNavigateToAiDeen = { activeSubScreen = MoreSubScreen.AI_DEEN },
+                                            onNavigateToAboutDeveloper = { activeSubScreen = MoreSubScreen.ABOUT_DEVELOPER },
                                             onNavigateToLocator = { activeSubScreen = MoreSubScreen.LOCATOR }
                                         )
                                     }
@@ -345,11 +354,11 @@ class MainActivity : ComponentActivity() {
                                             onNavigateBack = { activeSubScreen = MoreSubScreen.NONE }
                                         )
                                     }
-                                    MoreSubScreen.AI_DEEN -> {
-                                        AiDeenScreen(
-                                            onNavigateBack = { activeSubScreen = MoreSubScreen.NONE }
-                                        )
-                                    }
+                                    MoreSubScreen.ABOUT_DEVELOPER -> {
+                                         AboutDeveloperScreen(
+                                             onNavigateBack = { activeSubScreen = MoreSubScreen.NONE }
+                                         )
+                                     }
                                     MoreSubScreen.LOCATOR -> {
                                         MosqueHalalScreen(
                                             viewModel = prayerViewModel,

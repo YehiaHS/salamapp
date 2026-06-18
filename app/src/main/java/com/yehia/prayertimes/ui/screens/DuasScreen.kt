@@ -16,6 +16,8 @@ import androidx.compose.material.icons.filled.Bedtime
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Flight
+import androidx.compose.material.icons.filled.Healing
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Mosque
 import androidx.compose.material.icons.filled.NightsStay
 import androidx.compose.material.icons.filled.Restaurant
@@ -24,6 +26,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -70,25 +74,40 @@ fun DuasScreen() {
             modifier = Modifier.padding(bottom = SalamSpacing.sectionGap)
         )
 
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(SalamSpacing.cardGap),
-            modifier = Modifier.fillMaxSize()
-        ) {
-            itemsIndexed(categories, key = { _, category -> category.name }) { index, category ->
-                val isExpanded = expandedIndex == index
-                CategoryDuaRow(
-                    category = category,
-                    isExpanded = isExpanded,
-                    index = index,
-                    palette = palette,
-                    onToggle = {
-                        expandedIndex = if (isExpanded) -1 else index
-                    }
-                )
+        Box(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(SalamSpacing.cardGap),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                itemsIndexed(categories, key = { _, category -> category.name }) { index, category ->
+                    val isExpanded = expandedIndex == index
+                    CategoryDuaRow(
+                        category = category,
+                        isExpanded = isExpanded,
+                        index = index,
+                        palette = palette,
+                        onToggle = {
+                            expandedIndex = if (isExpanded) -1 else index
+                        }
+                    )
+                }
+                item {
+                    Spacer(modifier = Modifier.height(110.dp))
+                }
             }
-            item {
-                Spacer(modifier = Modifier.height(SalamSpacing.sectionGap))
-            }
+
+            // Top fading edge overlay to prevent abrupt card cutoff under header
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(24.dp)
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(palette.background, Color.Transparent)
+                        )
+                    )
+                    .align(Alignment.TopCenter)
+            )
         }
     }
 }
@@ -109,6 +128,8 @@ fun CategoryDuaRow(
         "Mosque" -> Icons.Default.Mosque
         "Restaurant" -> Icons.Default.Restaurant
         "Flight" -> Icons.Default.Flight
+        "Home" -> Icons.Default.Home
+        "Healing" -> Icons.Default.Healing
         else -> Icons.Default.AutoAwesome
     }
 
@@ -216,7 +237,7 @@ fun DuaItem(dua: Dua, index: Int, palette: com.yehia.prayertimes.ui.theme.ThemeP
 
         Spacer(modifier = Modifier.height(SalamSpacing.elementGap))
 
-        // Arabic text
+        // Arabic text right aligned
         Text(
             text = dua.arabic,
             style = MaterialTheme.typography.titleLarge.copy(
@@ -225,7 +246,7 @@ fun DuaItem(dua: Dua, index: Int, palette: com.yehia.prayertimes.ui.theme.ThemeP
                 textDirection = TextDirection.Rtl,
                 lineHeight = 34.sp
             ),
-            textAlign = TextAlign.End,
+            textAlign = TextAlign.Right,
             modifier = Modifier.fillMaxWidth()
         )
 

@@ -156,7 +156,7 @@ fun SurahItemCard(
     palette: com.yehia.prayertimes.ui.theme.ThemePalette,
     onClick: () -> Unit
 ) {
-    val shape = if (index % 2 == 0) SalamShapes.expressiveCorner1 else SalamShapes.expressiveCorner2
+    val shape = SalamShapes.expressiveCorner2
     SalamCard(
         modifier = Modifier.fillMaxWidth(),
         elevation = 2,
@@ -200,24 +200,20 @@ fun SurahItemCard(
                     )
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(SalamSpacing.elementGap)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        // Revelation type chip
-                        Surface(
-                            shape = SalamShapes.cardSmall,
-                            color = palette.surfaceVariant.copy(alpha = 0.6f)
-                        ) {
-                            Text(
-                                text = surah.revelationType,
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    color = palette.textSecondary
-                                ),
-                                modifier = Modifier.padding(
-                                    horizontal = SalamSpacing.elementGap,
-                                    vertical = 2.dp
-                                )
+                        Text(
+                            text = surah.revelationType,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                color = palette.textSecondary
                             )
-                        }
+                        )
+                        Text(
+                            text = "•",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                color = palette.textMuted
+                            )
+                        )
                         Text(
                             text = "${surah.ayahCount} Ayahs",
                             style = MaterialTheme.typography.labelSmall.copy(

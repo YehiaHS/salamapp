@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Mosque
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -54,7 +55,7 @@ fun MoreScreen(
     onNavigateToNames: () -> Unit,
     onNavigateToHajj: () -> Unit,
     onNavigateToZakat: () -> Unit,
-    onNavigateToAiDeen: () -> Unit,
+    onNavigateToAboutDeveloper: () -> Unit,
     onNavigateToLocator: () -> Unit
 ) {
     val palette by ThemeManager.currentPalette.collectAsState()
@@ -172,11 +173,11 @@ fun MoreScreen(
             item {
                 Box(modifier = Modifier.staggeredEntrance(8)) {
                     MoreMenuCard(
-                        title = LanguageManager.get("title_aideen"),
-                        subtitle = "Islamic AI chat assistant",
-                        icon = Icons.Default.AutoAwesome,
+                        title = "About Developer",
+                        subtitle = "Info about the developer",
+                        icon = Icons.Default.Person,
                         shape = com.yehia.prayertimes.ui.theme.SalamShapes.expressiveCorner1,
-                        onClick = onNavigateToAiDeen
+                        onClick = onNavigateToAboutDeveloper
                     )
                 }
             }

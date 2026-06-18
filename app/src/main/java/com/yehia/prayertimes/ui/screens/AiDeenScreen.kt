@@ -39,6 +39,7 @@ import com.yehia.prayertimes.ui.theme.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+/*
 private fun getDecryptedKey(): String {
     val xorArray = intArrayOf(
         89, 65, 7, 69, 88, 7, 92, 27, 7, 26, 76, 76, 78, 72, 19, 79, 26, 78, 31, 18, 30,
@@ -430,3 +431,4 @@ fun getIslamicQA(query: String): String {
         }
     }
 }
+*/

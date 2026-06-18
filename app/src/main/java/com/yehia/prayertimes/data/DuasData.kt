@@ -17,6 +17,24 @@ object DuasData {
 
     val categories: List<DuaCategory> = listOf(
         DuaCategory(
+            name = "After Prayer · أذكار بعد الصلاة",
+            icon = "Mosque",
+            duas = listOf(
+                Dua(
+                    arabic = "أَسْتَغْفِرُ اللَّهَ، أَسْتَغْفِرُ اللَّهَ، أَسْتَغْفِرُ اللَّهَ. اللَّهُمَّ أَنْتَ السَّلَامُ وَمِنْكَ السَّلَامُ، تَبَارَكْتَ يَا ذَا الْجَلَالِ وَالْإِكْرَامِ",
+                    transliteration = "Astaghfirullah, Astaghfirullah, Astaghfirullah. Allahumma antas-salam wa minkas-salam, tabarakta ya dhal-jalali wal-ikram.",
+                    translation = "I seek the forgiveness of Allah (three times). O Allah, You are Peace and from You comes peace. Blessed are You, O Owner of majesty and honour.",
+                    reference = "Muslim 1:414"
+                ),
+                Dua(
+                    arabic = "لَا إِلَٰهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَىٰ كُلِّ شَيْءٍ قَدِيرٌ. اللَّهُمَّ لَا مَانِعَ لِمَا أَعْطَيْتَ، وَلَا مُعْطِيَ لِمَا مَنَعْتَ، وَلَا يَنْفَعُ ذَا الْجَدِّ مِنْكَ الْجَدُّ",
+                    transliteration = "La ilaha illallahu wahdahu la shareeka lah, lahul-mulku wa lahul-hamdu wa huwa 'ala kulli shay'in qadeer. Allahumma la mani'a lima a'tayt, wa la mu'tiya lima mana't, wa la yanfa'u dhal-jaddi minkal-jadd.",
+                    translation = "None has the right to be worshipped except Allah alone, having no partner. To Him belongs the dominion and all praise, and He is over all things capable. O Allah, none can withhold what You give, and none can give what You withhold, and the greatness of the great will be of no avail against You.",
+                    reference = "Sahih al-Bukhari 844, Muslim 593"
+                )
+            )
+        ),
+        DuaCategory(
             name = "Morning Adhkar · أذكار الصباح",
             icon = "WbSunny",
             duas = listOf(
@@ -89,20 +107,86 @@ object DuasData {
             )
         ),
         DuaCategory(
-            name = "After Prayer · أذكار بعد الصلاة",
+            name = "Protection · أدعية الوقاية",
+            icon = "AutoAwesome",
+            duas = listOf(
+                Dua(
+                    arabic = "أَعُوذُ بِكَلِمَاتِ اللَّهِ التَّامَّةِ، مِنْ كُلِّ شَيْطَانٍ وَهَامَّةٍ، وَمِنْ كُلِّ عَيْنٍ لَامَّةٍ",
+                    transliteration = "A'udhu bikalimatil-lahit-tammati min kulli shaytanin wa hammah, wa min kulli 'aynin lammah.",
+                    translation = "I seek refuge in the perfect words of Allah from every devil and poisonous pest, and from every evil eye (protection from envy & harm).",
+                    reference = "Sahih al-Bukhari 3371"
+                ),
+                Dua(
+                    arabic = "اللَّهُمَّ إِنِّي أَعُوذُ بِكَ أَنْ أُشْرِكَ بِكَ وَأَنَا أَعْلَمُ، وَأَسْتَغْفِرُكَ لِمَا لَا أَعْلَمُ",
+                    transliteration = "Allahumma inni a'udhu bika an ushrika bika wa ana a'lam, wa astaghfiruka lima la a'lam.",
+                    translation = "O Allah, I seek refuge in You from knowingly associating partners with You (shirk), and I seek Your forgiveness for that which I do not know.",
+                    reference = "Ahmad 4:362, Al-Adab Al-Mufrad 716"
+                ),
+                Dua(
+                    arabic = "أَذْهِبِ الْبَاسَ رَبَّ النَّاسِ، وَاشْفِ أَنْتَ الشَّافِي، لَا شِفَاءَ إِلَّا شِفَاؤُكَ، شِفَاءً لَا يُغَادِرُ سَقَمًا",
+                    transliteration = "Adhhibil-bas, Rabban-nas, washfi antash-Shafi, la shifa'a illa shifa'uk, shifa'an la yughadiru saqama.",
+                    translation = "Remove the disease, O Lord of the people, and cure, for You are the Curer, there is no cure but Your cure, a cure that leaves no disease behind (Prophet's Ruqyah against magic/sihr & harm).",
+                    reference = "Sahih al-Bukhari 5743, Muslim 2191"
+                ),
+                Dua(
+                    arabic = "بِسْمِ اللَّهِ أَرْقِيكَ، مِنْ كُلِّ شَيْءٍ يُؤْذِيكَ، مِنْ شَرِّ كُلِّ نَفْسٍ أَوْ عَيْنِ حَاسِدٍ، اللَّهُ يَشْفِيكَ بِاسْمِ اللَّهِ أَرْقِيكَ",
+                    transliteration = "Bismillahi arqeek, min kulli shay'in yu'dheek, min sharri kulli nafsin aw 'ayni hasidin, Allahu yashfeek, bismillahi arqeek.",
+                    translation = "In the name of Allah I perform Ruqyah for you, from everything that harms you, from the evil of any soul or envious eye, may Allah cure you; in the name of Allah I perform Ruqyah for you (Gabriel's Ruqyah for magic/sihr protection).",
+                    reference = "Muslim 2186 (Angel Gabriel's Ruqyah on the Prophet)"
+                )
+            )
+        ),
+        DuaCategory(
+            name = "Anxiety & Relief · أدعية الهم والكرب",
+            icon = "Healing",
+            duas = listOf(
+                Dua(
+                    arabic = "لَا إِلَٰهَ إِلَّا اللَّهُ الْعَظِيمُ الْحَلِيمُ، لَا إِلَٰهَ إِلَّا اللَّهُ رَبُّ الْعَرْشِ الْعَظِيمِ، لَا إِلَٰهَ إِلَّا اللَّهُ رَبُّ السَّمَاوَاتِ وَرَبُّ الْأَرْضِ وَرَبُّ الْعَرْشِ الْكَرِيمِ",
+                    transliteration = "La ilaha illallahul-'Adheemul-Haleem, la ilaha illallah Rabbu- 'Arshil-'Adheem, la ilaha illallah Rabbu-samawati wa Rabbul-ardi wa Rabbul-'Arshil-Kareem.",
+                    translation = "There is no god but Allah, the Great, the Tolerant. There is no god but Allah, Lord of the Magnificent Throne. There is no god but Allah, Lord of the heavens and Lord of the earth, and Lord of the Noble Throne.",
+                    reference = "Sahih al-Bukhari 6346, Muslim 2730"
+                ),
+                Dua(
+                    arabic = "يَا حَيُّ يَا قَيُّومُ بِرَحْمَتِكَ أَسْتَغِيثُ، أَصْلِحْ لِي شَأْنِي كُلَّهُ، وَلَا تَكِلْنِي إِلَىٰ نَفْسِي طَرْفَةَ عَيْنٍ",
+                    transliteration = "Ya Hayyu Ya Qayyoomu birahmatika astagheeth, aslih lee sha'nee kullahu, wa la takilnee ila nafsee tarfata 'ayn.",
+                    translation = "O Ever-Living, O Self-Sustaining, by Your mercy I seek help. Set all my affairs right, and do not leave me to myself even for the blink of an eye.",
+                    reference = "Hakim 1:545, Sahih al-Jami 5820"
+                )
+            )
+        ),
+        DuaCategory(
+            name = "Mosque · أذكار المسجد",
             icon = "Mosque",
             duas = listOf(
                 Dua(
-                    arabic = "أَسْتَغْفِرُ اللَّهَ، أَسْتَغْفِرُ اللَّهَ، أَسْتَغْفِرُ اللَّهَ. اللَّهُمَّ أَنْتَ السَّلَامُ وَمِنْكَ السَّلَامُ، تَبَارَكْتَ يَا ذَا الْجَلَالِ وَالْإِكْرَامِ",
-                    transliteration = "Astaghfirullah, Astaghfirullah, Astaghfirullah. Allahumma antas-salam wa minkas-salam, tabarakta ya dhal-jalali wal-ikram.",
-                    translation = "I seek the forgiveness of Allah (three times). O Allah, You are Peace and from You comes peace. Blessed are You, O Owner of majesty and honour.",
-                    reference = "Muslim 1:414"
+                    arabic = "اللَّهُمَّ افْتَحْ لِي أَبْوَابَ رَحْمَتِكَ",
+                    transliteration = "Allahummaf-tah lee abwaba rahmatik.",
+                    translation = "O Allah, open the gates of Your mercy for me.",
+                    reference = "Muslim 1:494"
                 ),
                 Dua(
-                    arabic = "لَا إِلَٰهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَىٰ كُلِّ شَيْءٍ قَدِيرٌ. اللَّهُمَّ لَا مَانِعَ لِمَا أَعْطَيْتَ، وَلَا مُعْطِيَ لِمَا مَنَعْتَ، وَلَا يَنْفَعُ ذَا الْجَدِّ مِنْكَ الْجَدُّ",
-                    transliteration = "La ilaha illallahu wahdahu la shareeka lah, lahul-mulku wa lahul-hamdu wa huwa 'ala kulli shay'in qadeer. Allahumma la mani'a lima a'tayt, wa la mu'tiya lima mana't, wa la yanfa'u dhal-jaddi minkal-jadd.",
-                    translation = "None has the right to be worshipped except Allah alone, having no partner. To Him belongs the dominion and all praise, and He is over all things capable. O Allah, none can withhold what You give, and none can give what You withhold, and the greatness of the great will be of no avail against You.",
-                    reference = "Sahih al-Bukhari 844, Muslim 593"
+                    arabic = "اللَّهُمَّ إِنِّي أَسْأَلُكَ مِنْ فَضْلِكَ",
+                    transliteration = "Allahumma innee as'aluka min fadlik.",
+                    translation = "O Allah, I ask You from Your favor.",
+                    reference = "Muslim 1:494"
+                )
+            )
+        ),
+        DuaCategory(
+            name = "Home · أذكار المنزل",
+            icon = "Home",
+            duas = listOf(
+                Dua(
+                    arabic = "بِسْمِ اللَّهِ تَوَكَّلْتُ عَلَى اللَّهِ، وَلَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ",
+                    transliteration = "Bismillahi tawakkaltu 'alal-lah, wa la hawla wa la quwwata illa billah.",
+                    translation = "In the name of Allah, I place my trust in Allah, and there is no might or power except with Allah.",
+                    reference = "Abu Dawud 4:325, Tirmidhi 5:490"
+                ),
+                Dua(
+                    arabic = "بِسْمِ اللَّهِ وَلَجْنَا، وَبِسْمِ اللَّهِ خَرَجْنَا، وَعَلَى اللَّهِ رَبِّنَا تَوَكَّلْنَا",
+                    transliteration = "Bismillahi walajna, wa bismillahi kharajna, wa 'ala Allahi Rabbina tawakkalna.",
+                    translation = "In the name of Allah we enter, and in the name of Allah we leave, and upon Allah our Lord we place our trust.",
+                    reference = "Abu Dawud 4:325"
                 )
             )
         ),
@@ -163,12 +247,6 @@ object DuasData {
                     transliteration = "Allahumma inni a'udhu bika minal-hammi wal-hazan, wa a'udhu bika minal-'ajzi wal-kasal, wa a'udhu bika minal-jubni wal-bukhl, wa a'udhu bika min ghalabatid-dayni wa qahrir-rijal.",
                     translation = "O Allah, I seek refuge in You from anxiety and sorrow, and I seek refuge in You from helplessness and laziness, and I seek refuge in You from cowardice and miserliness, and I seek refuge in You from the burden of debt and being overpowered by men.",
                     reference = "Sahih al-Bukhari 6369"
-                ),
-                Dua(
-                    arabic = "اللَّهُمَّ أَصْلِحْ لِي دِينِي الَّذِي هُوَ عِصْمَةُ أَمْرِي، وَأَصْلِحْ لِي دُنْيَايَ الَّتِي فِيهَا مَعَاشِي، وَأَصْلِحْ لِي آخِرَتِي الَّتِي فِيهَا مَعَادِي، وَاجْعَلِ الْحَيَاةَ زِيَادَةً لِي فِي كُلِّ خَيْرٍ، وَاجْعَلِ الْمَوْتَ رَاحَةً لِي مِنْ كُلِّ شَرٍّ",
-                    transliteration = "Allahumma aslih li deeni alladhi huwa 'ismatu amri, wa aslih li dunyaya allati fiha ma'ashi, wa aslih li akhirati allati fiha ma'adi, waj'alil-hayata ziyadatan li fi kulli khayr, waj'alil-mawta rahatan li min kulli sharr.",
-                    translation = "O Allah, set right my religion which is the safeguard of my affairs. And set right for me my worldly affairs wherein is my living. And set right for me my Hereafter to which is my return. And make life for me an increase in every good, and make death a relief for me from every evil.",
-                    reference = "Muslim 2720"
                 )
             )
         )

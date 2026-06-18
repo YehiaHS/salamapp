@@ -39,12 +39,37 @@ data class IllustrationPalette(
 )
 
 fun ThemePalette.toIllustrationPalette(): IllustrationPalette {
+    // Determine dynamic times to choose colors matching sunrise/sunset/daylight/nighttime
+    val cal = java.util.Calendar.getInstance()
+    val hr = cal.get(java.util.Calendar.HOUR_OF_DAY)
+    val min = cal.get(java.util.Calendar.MINUTE)
+    val timeMinutes = hr * 60 + min
+
+    // 04:30 to 06:00 is sunrise
+    // 06:00 to 17:30 is daylight
+    // 17:30 to 19:30 is sunset
+    // 19:30 to 04:30 is nighttime
+    val (skyTop, skyBottom, starAlpha) = when (timeMinutes) {
+        in 270..360 -> { // Sunrise: soft orange/pink to gold
+            Triple(Color(0xFFFC5C7D), Color(0xFF6A82FB), 0.1f)
+        }
+        in 361..1050 -> { // Daylight: bright morning/afternoon sky
+            Triple(Color(0xFF4A90E2), Color(0xFF50E3C2), 0.0f)
+        }
+        in 1051..1170 -> { // Sunset: deep purple/crimson to warm orange
+            Triple(Color(0xFF3E2A75), Color(0xFFFF5E62), 0.1f)
+        }
+        else -> { // Nighttime: deep cosmic blue/purple
+            Triple(Color(0xFF0F0B1E), Color(0xFF1E1430), 0.8f)
+        }
+    }
+
     return if (isLight) {
         IllustrationPalette(
-            skyGradientTop = primary.copy(alpha = 0.85f),
-            skyGradientBottom = secondary.copy(alpha = 0.6f),
+            skyGradientTop = skyTop.copy(alpha = 0.85f),
+            skyGradientBottom = skyBottom.copy(alpha = 0.6f),
             moonColor = Color(0xFFF4EFEA),
-            starColor = accent.copy(alpha = 0.8f),
+            starColor = Color(0xFFFFD54F).copy(alpha = starAlpha),
             buildingColor = primary.copy(alpha = 0.25f),
             glowColor = primary.copy(alpha = 0.15f),
             badgeBg = secondary.copy(alpha = 0.12f),
@@ -52,10 +77,10 @@ fun ThemePalette.toIllustrationPalette(): IllustrationPalette {
         )
     } else {
         IllustrationPalette(
-            skyGradientTop = primary.copy(alpha = 0.55f),
-            skyGradientBottom = secondary.copy(alpha = 0.35f),
+            skyGradientTop = skyTop.copy(alpha = 0.55f),
+            skyGradientBottom = skyBottom.copy(alpha = 0.35f),
             moonColor = textPrimary.copy(alpha = 0.9f),
-            starColor = accent.copy(alpha = 0.7f),
+            starColor = Color(0xFFFFD54F).copy(alpha = starAlpha),
             buildingColor = primary.copy(alpha = 0.18f),
             glowColor = primary.copy(alpha = 0.1f),
             badgeBg = secondary.copy(alpha = 0.15f),
@@ -116,25 +141,25 @@ val readingThemes = listOf(
 // ─────────────────────────────────────────────────
 
 val SalamTwilightPalette = ThemePalette(
-    background = Color(0xFFF4EFEA), // Warm sand background
-    surface = Color(0xFFFAF6F0),    // Milky light surface
-    surfaceVariant = Color(0xFFF2ECE4), // Slightly darker sand shade
-    cardElevation1 = Color(0xFFFAF6F0),
-    cardElevation2 = Color(0xFFFAF8F5), // Warm milky-sand card base
-    cardElevation3 = Color(0xFFEFE6DB), // Active hover card
-    primary = Color(0xFF3E2A75),        // Deep Twilight Purple
-    secondary = Color(0xFF5C419E),      // Mid-tone Purple
-    accent = Color(0xFFE8DEF8),         // Soft violet accent
-    onPrimary = Color(0xFFFFFFFF),
-    textPrimary = Color(0xFF2C1E50),    // Purple-black headers
-    textSecondary = Color(0xFF5F5A66),  // Charcoal
-    textMuted = Color(0xFF8C8594),      // Subdued gray
-    glowColor = Color(0x263E2A75),
-    error = Color(0xFFB3261E),
-    outline = Color(0xFFEAE3DB),        // Soft separators
-    scrim = Color(0x66000000),
-    shimmer = Color(0x0A000000),
-    isLight = true
+    background = Color(0xFF09080F),     // Very dark violet/black
+    surface = Color(0xFF131124),        // Deep dark violet surface
+    surfaceVariant = Color(0xFF1C1834), // Slightly lighter violet
+    cardElevation1 = Color(0xFF131124),
+    cardElevation2 = Color(0xFF161426), // Card base matching the mockup
+    cardElevation3 = Color(0xFF201C38), // Hover/Active card
+    primary = Color(0xFFA78BFA),        // Rich lavender/violet matching Fajr circle indicator
+    secondary = Color(0xFF8B5CF6),      // Vivid violet
+    accent = Color(0xFFC084FC),         // Soft purple accent
+    onPrimary = Color(0xFF09080F),      // Contrast text on primary
+    textPrimary = Color(0xFFFFFFFF),    // Clean white text
+    textSecondary = Color(0xFF9D9BAE),  // Muted gray-violet
+    textMuted = Color(0xFF5C5A6E),      // Darker muted text
+    glowColor = Color(0x26A78BFA),
+    error = Color(0xFFFF6B6B),
+    outline = Color(0xFF201C38),        // Thin border color matching mockup cards
+    scrim = Color(0xCC000000),
+    shimmer = Color(0x1AFFFFFF),
+    isLight = false
 )
 
 val EmeraldNightPalette = ThemePalette(

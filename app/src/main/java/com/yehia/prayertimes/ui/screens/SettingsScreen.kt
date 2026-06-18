@@ -580,6 +580,73 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(SalamSpacing.sectionGap))
             SalamSectionHeader(title = LanguageManager.get("settings_about"))
 
+            val updateStatus by com.yehia.prayertimes.utils.AutoUpdater.status.collectAsState()
+            val latestVersion by com.yehia.prayertimes.utils.AutoUpdater.latestVersion.collectAsState()
+
+            SalamCard(
+                modifier = Modifier.fillMaxWidth().padding(bottom = SalamSpacing.cardGap),
+                elevation = 2
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(SalamSpacing.cardPaddingInnerLarge),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "App Updates",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = palette.textPrimary
+                        )
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = when (updateStatus) {
+                            com.yehia.prayertimes.utils.AutoUpdater.UpdateStatus.IDLE -> "Check for updates from GitHub"
+                            com.yehia.prayertimes.utils.AutoUpdater.UpdateStatus.CHECKING -> "Checking..."
+                            com.yehia.prayertimes.utils.AutoUpdater.UpdateStatus.UPDATE_AVAILABLE -> "New version $latestVersion available!"
+                            com.yehia.prayertimes.utils.AutoUpdater.UpdateStatus.UP_TO_DATE -> "Salam is up to date"
+                            com.yehia.prayertimes.utils.AutoUpdater.UpdateStatus.DOWNLOADING -> "Downloading update..."
+                            com.yehia.prayertimes.utils.AutoUpdater.UpdateStatus.ERROR -> "Error checking for updates"
+                        },
+                        style = MaterialTheme.typography.bodyMedium.copy(color = palette.textSecondary),
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    if (updateStatus == com.yehia.prayertimes.utils.AutoUpdater.UpdateStatus.UPDATE_AVAILABLE) {
+                        Box(
+                            modifier = Modifier
+                                .background(palette.primary, SalamShapes.pill)
+                                .clickable { com.yehia.prayertimes.utils.AutoUpdater.startUpdate(context) }
+                                .padding(horizontal = 20.dp, vertical = 10.dp)
+                        ) {
+                            Text(
+                                text = "Install Update",
+                                color = palette.onPrimary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .background(palette.primary.copy(alpha = 0.12f), SalamShapes.pill)
+                                .clickable(enabled = updateStatus != com.yehia.prayertimes.utils.AutoUpdater.UpdateStatus.CHECKING) {
+                                    com.yehia.prayertimes.utils.AutoUpdater.checkForUpdates()
+                                }
+                                .padding(horizontal = 20.dp, vertical = 10.dp)
+                        ) {
+                            Text(
+                                text = "Check Now",
+                                color = palette.primary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
+
             SalamCard(
                 modifier = Modifier.fillMaxWidth(),
                 elevation = 2
