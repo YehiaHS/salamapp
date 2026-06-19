@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.pager.HorizontalPager
@@ -27,6 +28,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.ContentCopy
@@ -45,14 +47,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yehia.prayertimes.data.Ayah
-import com.yehia.prayertimes.data.QuranPageAyah
 import com.yehia.prayertimes.data.Surah
+import com.yehia.prayertimes.data.QuranPageAyah
+import com.yehia.prayertimes.data.StandardQuranPage
 import com.yehia.prayertimes.ui.theme.SalamIconBadge
 import com.yehia.prayertimes.ui.theme.SalamScreenScaffold
 import com.yehia.prayertimes.ui.theme.SalamSpacing
@@ -91,6 +97,7 @@ fun QuranDetailScreen(
     val selectedPage by viewModel.selectedPage.collectAsState()
     val allSurahs by viewModel.surahs.collectAsState()
     val pageStarts by viewModel.pageStarts.collectAsState()
+    val standardPages by viewModel.standardPages.collectAsState()
     val bookmarkSurah by viewModel.bookmarkSurah.collectAsState()
     val bookmarkAyah by viewModel.bookmarkAyah.collectAsState()
     val readerFontSize by viewModel.readerFontSize.collectAsState()
@@ -121,6 +128,7 @@ fun QuranDetailScreen(
     val strokeColor = activeReadingTheme.accent
 
     var showPreferences by remember { mutableStateOf(false) }
+    var showAudioControls by remember { mutableStateOf(false) }
     var showSurahJumpDialog by remember { mutableStateOf(false) }
 
     val coroutineScope = rememberCoroutineScope()
@@ -155,33 +163,7 @@ fun QuranDetailScreen(
 
     val activeSurah = surah!!
 
-    val allAyahs = remember(allSurahs) {
-        var globalIndex = 0
-        allSurahs.flatMap { pageSurah ->
-            pageSurah.ayahs.map { ayah ->
-                QuranPageAyah(pageSurah, ayah, globalIndex++)
-            }
-        }
-    }
 
-    val pageStartIndexes = remember(pageStarts, allAyahs) {
-        pageStarts.map { start ->
-            allAyahs.indexOfFirst {
-                it.surah.number == start.surahNumber && it.ayah.number == start.ayahNumber
-            }.coerceAtLeast(0)
-        }
-    }
-
-    val standardPages = remember(pageStarts, allAyahs, pageStartIndexes) {
-        pageStarts.mapIndexed { index, start ->
-            val fromIndex = pageStartIndexes.getOrElse(index) { 0 }
-            val toIndex = pageStartIndexes.getOrNull(index + 1) ?: allAyahs.size
-            StandardQuranPage(
-                pageNumber = start.page,
-                ayahs = allAyahs.subList(fromIndex, toIndex.coerceAtLeast(fromIndex))
-            )
-        }
-    }
 
     fun standardPageFor(surahNumber: Int, ayahNumber: Int): Int {
         if (pageStarts.isEmpty()) return 1
@@ -249,7 +231,7 @@ fun QuranDetailScreen(
         // Auto-scroll to bookmark on loading this Surah in Scroll mode
         if (readingMode == "scroll") {
             if (bookmarkSurah == activeSurah.number && bookmarkAyah > 0) {
-                val headerOffset = if (activeSurah.number != 9) 3 else 2 // include Audio Control item
+                val headerOffset = if (activeSurah.number != 9) 2 else 1 // include Audio Control item
                 val targetIndex = (bookmarkAyah - 1 + headerOffset).coerceAtLeast(0)
                 coroutineScope.launch {
                     listState.scrollToItem(targetIndex)
@@ -265,7 +247,7 @@ fun QuranDetailScreen(
     // Audio tracking LaunchedEffect to smoothly scroll the active verse into view (Scroll mode)
     LaunchedEffect(currentPlayingAyahIndex) {
         if (readingMode == "scroll" && currentPlayingAyahIndex >= 0) {
-            val headerOffset = if (activeSurah.number != 9) 3 else 2
+            val headerOffset = if (activeSurah.number != 9) 2 else 1
             val targetScrollIndex = currentPlayingAyahIndex + headerOffset
             if (targetScrollIndex < listState.layoutInfo.totalItemsCount) {
                 listState.animateScrollToItem(targetScrollIndex)
@@ -339,7 +321,21 @@ fun QuranDetailScreen(
             }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = { showPreferences = !showPreferences }) {
+                IconButton(onClick = { 
+                    showAudioControls = !showAudioControls 
+                    if (showAudioControls) showPreferences = false
+                }) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.VolumeUp,
+                        contentDescription = "Audio Reciter",
+                        tint = if (showAudioControls) palette.primary else textPrimaryColor
+                    )
+                }
+                Spacer(modifier = Modifier.width(SalamSpacing.elementGap))
+                IconButton(onClick = { 
+                    showPreferences = !showPreferences 
+                    if (showPreferences) showAudioControls = false
+                }) {
                     Icon(
                         imageVector = Icons.Default.FormatSize,
                         contentDescription = "Reading Settings",
@@ -533,15 +529,125 @@ fun QuranDetailScreen(
             }
         }
 
+        // Animated Audio Controls Drawer Card
+        AnimatedVisibility(
+            visible = showAudioControls,
+            enter = expandVertically(),
+            exit = shrinkVertically()
+        ) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = SalamSpacing.cardGap),
+                shape = SalamShapes.cardMedium,
+                colors = CardDefaults.cardColors(containerColor = cardBgColor),
+                border = BorderStroke(1.dp, strokeColor.copy(alpha = 0.5f))
+            ) {
+                Column(modifier = Modifier.padding(SalamSpacing.cardPaddingInner)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(
+                            onClick = {
+                                if (isPlaying) {
+                                    mediaPlayer.pause()
+                                    isPlaying = false
+                                    isAudioBuffering = false
+                                } else {
+                                    if (currentPlayingAyahIndex == -1) {
+                                        currentPlayingAyahIndex = 0
+                                    }
+                                    playAyah(currentPlayingAyahIndex)
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                contentDescription = "Play/Pause",
+                                tint = textPrimaryColor
+                            )
+                        }
+                        IconButton(
+                            onClick = {
+                                mediaPlayer.stop()
+                                mediaPlayer.reset()
+                                isPlaying = false
+                                isAudioBuffering = false
+                                currentPlayingAyahIndex = -1
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Stop,
+                                contentDescription = "Stop",
+                                tint = textPrimaryColor
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(SalamSpacing.elementGap))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = when {
+                                    isAudioBuffering && currentPlayingAyahIndex >= 0 -> "Loading Ayah ${currentPlayingAyahIndex + 1}"
+                                    isPlaying && currentPlayingAyahIndex >= 0 -> "Ayah ${currentPlayingAyahIndex + 1} • ${activeReciterInfo.shortName}"
+                                    else -> "Ready • ${activeReciterInfo.displayName}"
+                                },
+                                style = MaterialTheme.typography.labelLarge.copy(
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = textPrimaryColor
+                                )
+                            )
+                            Text(
+                                text = "Highlight follows the active recitation",
+                                style = MaterialTheme.typography.labelSmall.copy(color = textSecondaryColor)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        quranReciters.forEach { reciter ->
+                            val isSel = activeReciter == reciter.directory
+                            Box(
+                                modifier = Modifier
+                                    .clip(SalamShapes.pill)
+                                    .background(if (isSel) palette.primary.copy(alpha = 0.2f) else strokeColor.copy(alpha = 0.15f))
+                                    .salamClickable {
+                                        activeReciter = reciter.directory
+                                        prefs.edit().putString("quran_active_reciter", reciter.directory).apply()
+                                        if (isPlaying || isAudioBuffering) {
+                                            playAyah(currentPlayingAyahIndex)
+                                        }
+                                    }
+                                    .padding(horizontal = 10.dp, vertical = 6.dp)
+                            ) {
+                                Text(
+                                    text = reciter.shortName,
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isSel) palette.primary else textSecondaryColor
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         if (readingMode == "page") {
-            val initialPage = remember(selectedPage, bookmarkSurah, bookmarkAyah, activeSurah.number, pageStarts) {
+            val initialPage = remember(selectedPage, bookmarkSurah, bookmarkAyah, pageStarts) {
                 when {
                     selectedPage != null -> selectedPage!!.coerceIn(1, 604)
                     bookmarkSurah > 0 && bookmarkAyah > 0 -> standardPageFor(bookmarkSurah, bookmarkAyah)
                     else -> standardPageFor(activeSurah.number, 1)
                 } - 1
             }
-            val pagerState = key(pageStarts.size, initialPage) {
+            val pagerState = key(pageStarts.size) {
                 rememberPagerState(
                     initialPage = initialPage.coerceIn(0, (standardPages.size - 1).coerceAtLeast(0)),
                     pageCount = { standardPages.size.coerceAtLeast(1) }
@@ -551,8 +657,21 @@ fun QuranDetailScreen(
             LaunchedEffect(pagerState.currentPage, standardPages) {
                 val currentPage = standardPages.getOrNull(pagerState.currentPage) ?: return@LaunchedEffect
                 val firstAyah = currentPage.ayahs.firstOrNull() ?: return@LaunchedEffect
+                
+                // Auto-update surah name in top left if we cross into a new surah in page mode
+                if (activeSurah.number != firstAyah.surah.number) {
+                    viewModel.selectSurah(firstAyah.surah)
+                }
+
                 if (bookmarkSurah != firstAyah.surah.number || bookmarkAyah != firstAyah.ayah.number) {
                     viewModel.saveBookmark(firstAyah.surah.number, firstAyah.ayah.number)
+                }
+            }
+
+            LaunchedEffect(activeSurah.number) {
+                val targetPage = standardPageFor(activeSurah.number, 1) - 1
+                if (targetPage in 0 until pagerState.pageCount && targetPage != pagerState.currentPage) {
+                    pagerState.scrollToPage(targetPage)
                 }
             }
 
@@ -566,109 +685,6 @@ fun QuranDetailScreen(
             }
 
             Column(modifier = Modifier.fillMaxSize()) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = SalamSpacing.cardGap),
-                    shape = SalamShapes.expressiveCorner1,
-                    colors = CardDefaults.cardColors(containerColor = cardBgColor),
-                    border = BorderStroke(1.dp, strokeColor.copy(alpha = 0.5f))
-                ) {
-                    Column(modifier = Modifier.padding(SalamSpacing.cardPaddingInner)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            IconButton(
-                                onClick = {
-                                    if (isPlaying) {
-                                        mediaPlayer.pause()
-                                        isPlaying = false
-                                        isAudioBuffering = false
-                                    } else {
-                                        if (currentPlayingAyahIndex == -1) {
-                                            currentPlayingAyahIndex = 0
-                                        }
-                                        playAyah(currentPlayingAyahIndex)
-                                    }
-                                }
-                            ) {
-                                Icon(
-                                    imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                    contentDescription = "Play/Pause",
-                                    tint = textPrimaryColor
-                                )
-                            }
-                            IconButton(
-                                onClick = {
-                                    mediaPlayer.stop()
-                                    mediaPlayer.reset()
-                                    isPlaying = false
-                                    isAudioBuffering = false
-                                    currentPlayingAyahIndex = -1
-                                }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Stop,
-                                    contentDescription = "Stop",
-                                    tint = textPrimaryColor
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(SalamSpacing.elementGap))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = when {
-                                        isAudioBuffering && currentPlayingAyahIndex >= 0 -> "Loading Ayah ${currentPlayingAyahIndex + 1}"
-                                        isPlaying && currentPlayingAyahIndex >= 0 -> "Ayah ${currentPlayingAyahIndex + 1} • ${activeReciterInfo.shortName}"
-                                        else -> "Ready • ${activeReciterInfo.displayName}"
-                                    },
-                                    style = MaterialTheme.typography.labelLarge.copy(
-                                        fontWeight = FontWeight.ExtraBold,
-                                        color = textPrimaryColor
-                                    )
-                                )
-                                Text(
-                                    text = "Highlight follows the active recitation",
-                                    style = MaterialTheme.typography.labelSmall.copy(color = textSecondaryColor)
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            quranReciters.forEach { reciter ->
-                                val isSel = activeReciter == reciter.directory
-                                Box(
-                                    modifier = Modifier
-                                        .clip(SalamShapes.pill)
-                                        .background(if (isSel) palette.primary.copy(alpha = 0.2f) else strokeColor.copy(alpha = 0.15f))
-                                        .salamClickable {
-                                            activeReciter = reciter.directory
-                                            prefs.edit().putString("quran_active_reciter", reciter.directory).apply()
-                                            if (isPlaying || isAudioBuffering) {
-                                                playAyah(currentPlayingAyahIndex)
-                                            }
-                                        }
-                                        .padding(horizontal = 10.dp, vertical = 6.dp)
-                                ) {
-                                    Text(
-                                        text = reciter.shortName,
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontWeight = FontWeight.Bold,
-                                            color = if (isSel) palette.primary else textSecondaryColor
-                                        )
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-
                 HorizontalPager(
                     state = pagerState,
                     modifier = Modifier.weight(1f),
@@ -774,105 +790,7 @@ fun QuranDetailScreen(
                     }
                 }
 
-                // Audio Controls Card
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = SalamShapes.cardMedium,
-                        colors = CardDefaults.cardColors(containerColor = cardBgColor),
-                        border = BorderStroke(1.dp, strokeColor.copy(alpha = 0.5f))
-                    ) {
-                        Column(modifier = Modifier.padding(SalamSpacing.cardPaddingInner)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    IconButton(
-                                        onClick = {
-                                            if (isPlaying) {
-                                                mediaPlayer.pause()
-                                                isPlaying = false
-                                                isAudioBuffering = false
-                                            } else {
-                                                if (currentPlayingAyahIndex == -1) {
-                                                    currentPlayingAyahIndex = 0
-                                                }
-                                                playAyah(currentPlayingAyahIndex)
-                                            }
-                                        }
-                                    ) {
-                                        Icon(
-                                            imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                            contentDescription = "Play/Pause",
-                                            tint = textPrimaryColor
-                                        )
-                                    }
-                                    IconButton(
-                                        onClick = {
-                                            mediaPlayer.stop()
-                                            mediaPlayer.reset()
-                                            isPlaying = false
-                                            isAudioBuffering = false
-                                            currentPlayingAyahIndex = -1
-                                        }
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Stop,
-                                            contentDescription = "Stop",
-                                            tint = textPrimaryColor
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.width(SalamSpacing.elementGap))
-                                    Text(
-                                        text = when {
-                                            isAudioBuffering && currentPlayingAyahIndex >= 0 -> "Loading Ayah ${currentPlayingAyahIndex + 1}"
-                                            isPlaying && currentPlayingAyahIndex >= 0 -> "Ayah ${currentPlayingAyahIndex + 1} • ${activeReciterInfo.shortName}"
-                                            else -> activeReciterInfo.displayName
-                                        },
-                                        style = MaterialTheme.typography.labelMedium.copy(
-                                            fontWeight = FontWeight.Bold,
-                                            color = textPrimaryColor
-                                        )
-                                    )
-                                }
 
-                                Row(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .horizontalScroll(rememberScrollState()),
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    quranReciters.forEach { reciter ->
-                                        val isSel = activeReciter == reciter.directory
-                                        Box(
-                                            modifier = Modifier
-                                                .clip(SalamShapes.pill)
-                                                .background(if (isSel) palette.primary.copy(alpha = 0.2f) else strokeColor.copy(alpha = 0.15f))
-                                                .salamClickable {
-                                                    activeReciter = reciter.directory
-                                                    prefs.edit().putString("quran_active_reciter", reciter.directory).apply()
-                                                    if (isPlaying || isAudioBuffering) {
-                                                        playAyah(currentPlayingAyahIndex)
-                                                    }
-                                                }
-                                                .padding(horizontal = 10.dp, vertical = 6.dp)
-                                        ) {
-                                            Text(
-                                                reciter.shortName,
-                                                style = MaterialTheme.typography.labelSmall.copy(
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = if (isSel) palette.primary else textSecondaryColor
-                                                )
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
 
                 // Bismillah Card (Except Surah 9)
                 if (activeSurah.number != 9) {
@@ -945,7 +863,7 @@ fun QuranDetailScreen(
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        items(allSurahs) { item ->
+                        items(allSurahs, key = { it.number }) { item ->
                             val isCurrent = item.number == activeSurah.number
                             Row(
                                 modifier = Modifier
@@ -1014,10 +932,7 @@ fun QuranDetailScreen(
     }
 }
 
-private data class StandardQuranPage(
-    val pageNumber: Int,
-    val ayahs: List<QuranPageAyah>
-)
+
 
 @Composable
 private fun QuranStandardPageView(
@@ -1036,121 +951,206 @@ private fun QuranStandardPageView(
     onBookmark: (QuranPageAyah) -> Unit,
     translatedAyahs: Map<Int, String>
 ) {
-    val pageListState = rememberLazyListState()
+    var selectedPageAyah by remember { mutableStateOf<QuranPageAyah?>(null) }
 
-    LaunchedEffect(activeSurahNumber, activePlayingAyahNumber, page.pageNumber) {
-        if (activePlayingAyahNumber <= 0) return@LaunchedEffect
-        val targetIndex = page.ayahs.indexOfFirst {
-            it.surah.number == activeSurahNumber && it.ayah.number == activePlayingAyahNumber
+    fun getDisplayArabicText(ayah: Ayah, surahNum: Int): String {
+        val bismillahVariants = listOf(
+            "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
+            "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ",
+            "بِسْمِ اللهِ الرَّحْمَنِ الرَّحِيمِ"
+        )
+        val isFirstAyahBismillah = ayah.number == 1 &&
+                surahNum != 1 &&
+                surahNum != 9 &&
+                bismillahVariants.any { ayah.textArabic.startsWith(it) }
+        return if (isFirstAyahBismillah) {
+            var cleaned = ayah.textArabic
+            bismillahVariants.forEach { variant -> cleaned = cleaned.replace(variant, "") }
+            cleaned.trim().ifEmpty { ayah.textArabic }
+        } else {
+            ayah.textArabic
         }
-        if (targetIndex < 0) return@LaunchedEffect
-        // +1 to skip the page header item at index 0
-        pageListState.animateScrollToItem(targetIndex + 1)
     }
 
-    LazyColumn(
-        state = pageListState,
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(SalamSpacing.cardGap)
+    val surahChunks = remember(page.ayahs) {
+        val chunks = mutableListOf<Pair<Surah, List<QuranPageAyah>>>()
+        var currentSurah: Surah? = null
+        var currentList = mutableListOf<QuranPageAyah>()
+        for (ayah in page.ayahs) {
+            if (currentSurah == null || currentSurah.number != ayah.surah.number) {
+                if (currentList.isNotEmpty() && currentSurah != null) {
+                    chunks.add(currentSurah to currentList)
+                    currentList = mutableListOf()
+                }
+                currentSurah = ayah.surah
+            }
+            currentList.add(ayah)
+        }
+        if (currentList.isNotEmpty() && currentSurah != null) {
+            chunks.add(currentSurah to currentList)
+        }
+        chunks
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 8.dp, vertical = 4.dp)
     ) {
-        item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = SalamShapes.expressiveCorner2,
-                colors = CardDefaults.cardColors(containerColor = cardBgColor),
-                border = BorderStroke(1.dp, strokeColor.copy(alpha = 0.45f))
+        Card(
+            modifier = Modifier.fillMaxSize(),
+            shape = RoundedCornerShape(8.dp),
+            colors = CardDefaults.cardColors(containerColor = cardBgColor),
+            border = BorderStroke(1.dp, strokeColor.copy(alpha = 0.5f))
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(4.dp)
+                    .border(BorderStroke(1.5.dp, palette.primary.copy(alpha = 0.7f)), RoundedCornerShape(6.dp))
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(SalamSpacing.cardPaddingInner),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
+                Text(
+                    text = "Page ${page.pageNumber}",
+                    color = textSecondaryColor,
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                surahChunks.forEach { (surah, ayahs) ->
+                    if (surah.number != 9 && ayahs.firstOrNull()?.ayah?.number == 1) {
                         Text(
-                            text = "Mushaf Page",
-                            color = textSecondaryColor,
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
-                        )
-                        Text(
-                            text = page.pageNumber.toString(),
-                            color = textPrimaryColor,
-                            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold)
+                            text = "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = palette.primary,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(bottom = 12.dp)
                         )
                     }
-                    Text(
-                        text = page.ayahs.distinctBy { it.surah.number }.joinToString(" • ") { it.surah.nameArabic },
-                        color = palette.primary,
-                        textAlign = TextAlign.End,
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+
+                    val annotatedString = buildAnnotatedString {
+                        ayahs.forEach { pageAyah ->
+                            val start = length
+                            val text = getDisplayArabicText(pageAyah.ayah, pageAyah.surah.number)
+                            append(text)
+                            val end = length
+
+                            val isReciting = pageAyah.surah.number == activeSurahNumber && pageAyah.ayah.number == activePlayingAyahNumber
+                            if (isReciting) {
+                                addStyle(SpanStyle(background = palette.primary.copy(alpha = 0.2f)), start, end)
+                            }
+
+                            addStringAnnotation(tag = "AYAH_CLICK", annotation = page.ayahs.indexOf(pageAyah).toString(), start = start, end = end)
+
+                            pushStyle(SpanStyle(color = palette.primary, fontWeight = FontWeight.Bold))
+                            append(" ﴿${pageAyah.ayah.number}﴾ ")
+                            pop()
+                        }
+                    }
+
+                    ClickableText(
+                        text = annotatedString,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontSize = fontSize.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = textPrimaryColor,
+                            textAlign = TextAlign.Center,
+                            textDirection = TextDirection.Rtl,
+                            lineHeight = (fontSize * 1.8f).sp
+                        ),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                        onClick = { offset ->
+                            annotatedString.getStringAnnotations(tag = "AYAH_CLICK", start = offset, end = offset)
+                                .firstOrNull()?.let { annotation ->
+                                    val index = annotation.item.toIntOrNull()
+                                    if (index != null) {
+                                        selectedPageAyah = page.ayahs.getOrNull(index)
+                                    }
+                                }
+                        }
                     )
                 }
             }
         }
+    }
 
-        itemsIndexed(
-            items = page.ayahs,
-            key = { _, pageAyah -> "${page.pageNumber}-${pageAyah.surah.number}-${pageAyah.ayah.number}" }
-        ) { index, pageAyah ->
-            val previous = page.ayahs.getOrNull(index - 1)
-            val showSurahHeader = previous?.surah?.number != pageAyah.surah.number
-
-            Column {
-                if (showSurahHeader) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = SalamSpacing.elementGap, bottom = SalamSpacing.elementGap),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = pageAyah.surah.nameArabic,
-                            color = palette.primary,
-                            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold)
-                        )
-                        Text(
-                            text = "${pageAyah.surah.nameEnglish} • ${pageAyah.surah.revelationType}",
-                            color = textSecondaryColor,
-                            style = MaterialTheme.typography.labelMedium
-                        )
-                        if (pageAyah.surah.number != 9 && pageAyah.ayah.number == 1) {
-                            Spacer(modifier = Modifier.height(SalamSpacing.elementGap))
-                            Text(
-                                text = "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
-                                fontSize = 22.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = palette.primary,
-                                textAlign = TextAlign.Center
-                            )
+    selectedPageAyah?.let { pageAyah ->
+        val isBookmarked = bookmarkSurah == pageAyah.surah.number && bookmarkAyah == pageAyah.ayah.number
+        AlertDialog(
+            onDismissRequest = { selectedPageAyah = null },
+            title = {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "${pageAyah.surah.nameEnglish} • Ayah ${pageAyah.ayah.number}",
+                        fontWeight = FontWeight.Bold,
+                        color = textPrimaryColor,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    IconButton(
+                        onClick = {
+                            onBookmark(pageAyah)
                         }
+                    ) {
+                        Icon(
+                            imageVector = if (isBookmarked) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
+                            contentDescription = "Bookmark",
+                            tint = if (isBookmarked) palette.primary else textSecondaryColor
+                        )
                     }
                 }
-
-                val isBookmarked = bookmarkSurah == pageAyah.surah.number && bookmarkAyah == pageAyah.ayah.number
-                val isReciting = pageAyah.surah.number == activeSurahNumber && pageAyah.ayah.number == activePlayingAyahNumber
-
-                AyahCard(
-                    ayah = pageAyah.ayah,
-                    surahNumber = pageAyah.surah.number,
-                    fontSize = fontSize,
-                    isBookmarked = isBookmarked,
-                    isReciting = isReciting,
-                    palette = palette,
-                    containerColor = if (isReciting) palette.primary.copy(alpha = 0.12f) else cardBgColor,
-                    strokeColor = if (isReciting) palette.primary else strokeColor,
-                    textPrimaryColor = textPrimaryColor,
-                    textSecondaryColor = textSecondaryColor,
-                    onCopy = { onCopy(pageAyah) },
-                    onBookmark = { onBookmark(pageAyah) },
-                    translation = translatedAyahs[pageAyah.ayah.number]
-                )
-            }
-        }
-
-        item {
-            Spacer(modifier = Modifier.height(SalamSpacing.sectionGap))
-        }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        text = pageAyah.ayah.textArabic,
+                        fontSize = (fontSize - 2).coerceAtLeast(16f).sp,
+                        fontWeight = FontWeight.Bold,
+                        color = textPrimaryColor,
+                        textAlign = TextAlign.Right,
+                        modifier = Modifier.fillMaxWidth(),
+                        style = LocalTextStyle.current.copy(
+                            textDirection = TextDirection.Rtl,
+                            lineHeight = (fontSize * 1.5f).sp
+                        )
+                    )
+                    Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(strokeColor.copy(alpha = 0.3f)))
+                    Text(
+                        text = translatedAyahs[pageAyah.ayah.number] ?: pageAyah.ayah.textEnglish,
+                        style = MaterialTheme.typography.bodyMedium.copy(color = textSecondaryColor),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(
+                        onClick = {
+                            onCopy(pageAyah)
+                        }
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.ContentCopy, contentDescription = "Copy", modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Copy", color = palette.primary)
+                        }
+                    }
+                    TextButton(onClick = { selectedPageAyah = null }) {
+                        Text("Close", color = palette.primary)
+                    }
+                }
+            },
+            containerColor = cardBgColor
+        )
     }
 }
 

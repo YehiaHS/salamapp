@@ -35,6 +35,15 @@ class QuranViewModel(application: Application) : AndroidViewModel(application) {
     private val _pageStarts = MutableStateFlow<List<QuranPageStart>>(emptyList())
     val pageStarts: StateFlow<List<QuranPageStart>> = _pageStarts.asStateFlow()
 
+    private val _allAyahs = MutableStateFlow<List<com.yehia.prayertimes.data.QuranPageAyah>>(emptyList())
+    val allAyahs: StateFlow<List<com.yehia.prayertimes.data.QuranPageAyah>> = _allAyahs.asStateFlow()
+
+    private val _pageStartIndexes = MutableStateFlow<List<Int>>(emptyList())
+    val pageStartIndexes: StateFlow<List<Int>> = _pageStartIndexes.asStateFlow()
+
+    private val _standardPages = MutableStateFlow<List<com.yehia.prayertimes.data.StandardQuranPage>>(emptyList())
+    val standardPages: StateFlow<List<com.yehia.prayertimes.data.StandardQuranPage>> = _standardPages.asStateFlow()
+
     private val _bookmarkSurah = MutableStateFlow<Int>(0)
     val bookmarkSurah: StateFlow<Int> = _bookmarkSurah.asStateFlow()
 
@@ -55,7 +64,34 @@ class QuranViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch(Dispatchers.IO) {
             val list = repository.getAllSurahs()
             _surahs.value = list
-            _pageStarts.value = repository.getPageStarts()
+            val starts = repository.getPageStarts()
+            _pageStarts.value = starts
+
+            var globalIndex = 0
+            val ayahsList = list.flatMap { pageSurah ->
+                pageSurah.ayahs.map { ayah ->
+                    com.yehia.prayertimes.data.QuranPageAyah(pageSurah, ayah, globalIndex++)
+                }
+            }
+            _allAyahs.value = ayahsList
+
+            val startIndexes = starts.map { start ->
+                ayahsList.indexOfFirst {
+                    it.surah.number == start.surahNumber && it.ayah.number == start.ayahNumber
+                }.coerceAtLeast(0)
+            }
+            _pageStartIndexes.value = startIndexes
+
+            val pages = starts.mapIndexed { index, start ->
+                val fromIndex = startIndexes.getOrElse(index) { 0 }
+                val toIndex = startIndexes.getOrNull(index + 1) ?: ayahsList.size
+                com.yehia.prayertimes.data.StandardQuranPage(
+                    pageNumber = start.page,
+                    ayahs = ayahsList.subList(fromIndex, toIndex)
+                )
+            }
+            _standardPages.value = pages
+
             _isLoading.value = false
         }
         loadBookmark()

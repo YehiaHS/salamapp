@@ -33,8 +33,10 @@ import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material3.*
 import androidx.compose.ui.res.painterResource
 import androidx.compose.runtime.*
+import androidx.activity.compose.BackHandler
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.yehia.prayertimes.ui.screens.*
 import com.yehia.prayertimes.ui.theme.PrayerTimesTheme
@@ -146,6 +148,20 @@ class MainActivity : ComponentActivity() {
 
                 var showSplashScreen by remember { mutableStateOf(true) }
                 val isQuranLoading by quranViewModel.isLoading.collectAsState()
+
+                BackHandler(enabled = activeSubScreen != MoreSubScreen.NONE || selectedQuranSurah != null || currentTab != AppTab.PRAYER) {
+                    if (activeSubScreen != MoreSubScreen.NONE) {
+                        if (activeSubScreen == MoreSubScreen.CUSTOM_THEME) {
+                            activeSubScreen = MoreSubScreen.SETTINGS
+                        } else {
+                            activeSubScreen = MoreSubScreen.NONE
+                        }
+                    } else if (selectedQuranSurah != null) {
+                        quranViewModel.clearSelection()
+                    } else if (currentTab != AppTab.PRAYER) {
+                        currentTab = AppTab.PRAYER
+                    }
+                }
 
                 Box(modifier = Modifier.fillMaxSize()) {
                     Scaffold(
@@ -259,23 +275,28 @@ class MainActivity : ComponentActivity() {
                             .fillMaxSize()
                             .padding(
                                 top = innerPadding.calculateTopPadding(),
-                                start = innerPadding.calculateStartPadding(androidx.compose.ui.unit.LayoutDirection.Ltr),
-                                end = innerPadding.calculateEndPadding(androidx.compose.ui.unit.LayoutDirection.Ltr)
+                                start = innerPadding.calculateStartPadding(LocalLayoutDirection.current),
+                                end = innerPadding.calculateEndPadding(LocalLayoutDirection.current)
                             )
                     ) {
                         when (currentTab) {
                             AppTab.PRAYER -> {
-                                MainScreen(
-                                    viewModel = prayerViewModel,
-                                    onNavigateToQibla = {
-                                        currentTab = AppTab.MORE
-                                        activeSubScreen = MoreSubScreen.QIBLA
-                                    },
-                                    onNavigateToSettings = {
-                                        currentTab = AppTab.MORE
-                                        activeSubScreen = MoreSubScreen.SETTINGS
-                                    }
-                                )
+                                 MainScreen(
+                                     viewModel = prayerViewModel,
+                                     onNavigateToQibla = {
+                                         currentTab = AppTab.MORE
+                                         activeSubScreen = MoreSubScreen.QIBLA
+                                     },
+                                     onNavigateToSettings = {
+                                         currentTab = AppTab.MORE
+                                         activeSubScreen = MoreSubScreen.SETTINGS
+                                     },
+                                     onDetectLocation = {
+                                         val sharedPref = getSharedPreferences("prayer_notification_prefs", Context.MODE_PRIVATE)
+                                         sharedPref.edit().putBoolean("location_mode_manual", false).apply()
+                                         triggerLocationFetch()
+                                     }
+                                 )
                             }
                             AppTab.QURAN -> {
                                 if (selectedQuranSurah != null) {
@@ -398,6 +419,14 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun triggerLocationFetch() {
+        val sharedPref = getSharedPreferences("prayer_notification_prefs", Context.MODE_PRIVATE)
+        val isManual = sharedPref.getBoolean("location_mode_manual", false)
+        if (isManual) {
+            val lat = NotificationHelper.getSavedLatitude(this)
+            val lng = NotificationHelper.getSavedLongitude(this)
+            prayerViewModel.setLocation(lat, lng)
+            return
+        }
         LocationHelper.getCurrentLocation(this) { lat, lng ->
             prayerViewModel.setLocation(lat, lng)
         }

@@ -131,7 +131,7 @@ object HadithData {
         ),
         Hadith(
             id = 18,
-            arabic = "الْيَدُ الْعُلْيَا خَيYNٌ مِنَ الْيَدِ السُّفْلَى",
+            arabic = "الْيَدُ الْعُلْيَا خَيْرٌ مِنَ الْيَدِ السُّفْلَى",
             english = "The upper hand (giving) is better than the lower hand (taking).",
             narrator = "Hakim ibn Hizam",
             source = "Sahih al-Bukhari"

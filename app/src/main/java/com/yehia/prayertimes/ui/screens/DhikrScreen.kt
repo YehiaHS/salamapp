@@ -83,6 +83,15 @@ fun DhikrScreen() {
     var soundEnabled by remember { mutableStateOf(prefs.getBoolean("dhikr_sound_enabled", true)) }
     var hapticEnabled by remember { mutableStateOf(prefs.getBoolean("dhikr_haptic_enabled", true)) }
 
+    LaunchedEffect(count) {
+        if (count == 0) {
+            prefs.edit().putInt("dhikr_current_count", 0).apply()
+        } else {
+            delay(1000L)
+            prefs.edit().putInt("dhikr_current_count", count).apply()
+        }
+    }
+
     var customTargetInput by remember { mutableStateOf("") }
     var showCustomDialog by remember { mutableStateOf(false) }
     var showResetDialog by remember { mutableStateOf(false) }
@@ -155,11 +164,12 @@ fun DhikrScreen() {
                 .weight(1f)
                 .clickable(
                     interactionSource = screenInteractionSource,
-                    indication = null
+                    indication = null,
+                    onClickLabel = "Tap to increment Tasbih count",
+                    role = androidx.compose.ui.semantics.Role.Button
                 ) {
                     if (count < selectedTarget) {
                         count++
-                        prefs.edit().putInt("dhikr_current_count", count).apply()
 
                         if (soundEnabled) {
                             view.playSoundEffect(SoundEffectConstants.CLICK)
@@ -182,7 +192,6 @@ fun DhikrScreen() {
                                     activePresetIndex = (activePresetIndex + 1) % presets.size
                                     prefs.edit().putInt("dhikr_active_preset_idx", activePresetIndex).apply()
                                     count = 0
-                                    prefs.edit().putInt("dhikr_current_count", 0).apply()
                                 }
                             }
                         } else {
@@ -549,7 +558,6 @@ fun DhikrScreen() {
                                             selectedTarget = 99
                                             prefs.edit().putInt("dhikr_selected_target", 99).apply()
                                             count = 0
-                                            prefs.edit().putInt("dhikr_current_count", 0).apply()
                                         }
                                         99 -> {
                                             showCustomDialog = true
@@ -558,7 +566,6 @@ fun DhikrScreen() {
                                             selectedTarget = 33
                                             prefs.edit().putInt("dhikr_selected_target", 33).apply()
                                             count = 0
-                                            prefs.edit().putInt("dhikr_current_count", 0).apply()
                                         }
                                     }
                                 }
@@ -781,7 +788,6 @@ fun DhikrScreen() {
                             selectedTarget = inputInt
                             prefs.edit().putInt("dhikr_selected_target", inputInt).apply()
                             count = 0
-                            prefs.edit().putInt("dhikr_current_count", count).apply()
                         }
                         showCustomDialog = false
                     }
@@ -808,7 +814,6 @@ fun DhikrScreen() {
                 TextButton(
                     onClick = {
                         count = 0
-                        prefs.edit().putInt("dhikr_current_count", 0).apply()
                         showResetDialog = false
                     }
                 ) {

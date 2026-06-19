@@ -17,7 +17,7 @@ object NamesData {
         AllahName(5, "السلام", "As-Salam", "The Source of Peace and Perfection", "59:23"),
         AllahName(6, "المؤمن", "Al-Mu'min", "The Guardian of Faith / The Giver of Security", "59:23"),
         AllahName(7, "المهيمن", "Al-Muhaymin", "The Guardian / The Preserver", "59:23"),
-        AllahName(8, "العزيز", "Al-Aziz", "The Almighty / The Defeated", "3:6"),
+        AllahName(8, "العزيز", "Al-Aziz", "The Almighty / The Exalted in Might", "3:6"),
         AllahName(9, "الجبار", "Al-Jabbar", "The Compeller / The Restorer", "59:23"),
         AllahName(10, "المتكبر", "Al-Mutakabbir", "The Supreme / The Majestic", "59:23"),
         AllahName(11, "الخالق", "Al-Khaliq", "The Creator", "59:24"),

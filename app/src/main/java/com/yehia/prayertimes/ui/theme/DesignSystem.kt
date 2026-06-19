@@ -198,7 +198,7 @@ fun SalamCard(
     onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val palette by ThemeManager.currentPalette.collectAsState()
+    val palette = LocalThemePalette.current
 
     val containerColor = if (isActive) {
         palette.primary.copy(alpha = if (palette.isLight) 0.12f else 0.18f)
@@ -279,67 +279,6 @@ fun SalamScreenScaffold(
 ) {
     val palette by ThemeManager.currentPalette.collectAsState()
 
-    // Add infinite transitions for background parallax drifting
-    val infiniteTransition = rememberInfiniteTransition(label = "scaffoldParallaxTransition")
-
-    // Layer 1 drift (slower, larger scale)
-    val driftX1State = infiniteTransition.animateFloat(
-        initialValue = -15f,
-        targetValue = 15f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(28000, easing = androidx.compose.animation.core.LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "driftX1"
-    )
-    val driftY1State = infiniteTransition.animateFloat(
-        initialValue = -10f,
-        targetValue = 10f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(32000, easing = androidx.compose.animation.core.LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "driftY1"
-    )
-    val rotation1State = infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(180000, easing = androidx.compose.animation.core.LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "rotation1"
-    )
-
-    // Layer 2 drift (faster, smaller scale)
-    val driftX2State = infiniteTransition.animateFloat(
-        initialValue = 20f,
-        targetValue = -20f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(20000, easing = androidx.compose.animation.core.LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "driftX2"
-    )
-    val driftY2State = infiniteTransition.animateFloat(
-        initialValue = -15f,
-        targetValue = 15f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(24000, easing = androidx.compose.animation.core.LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "driftY2"
-    )
-    val rotation2State = infiniteTransition.animateFloat(
-        initialValue = 360f,
-        targetValue = 0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(120000, easing = androidx.compose.animation.core.LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "rotation2"
-    )
-
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -374,23 +313,8 @@ fun SalamScreenScaffold(
                 )
             }
     ) {
-        // Subtle geometric background ornament with dual-layer parallax movement
         if (showGeometricPattern) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .drawBehind {
-                        drawGeometricPattern(
-                            palette,
-                            driftX1State.value,
-                            driftY1State.value,
-                            rotation1State.value,
-                            driftX2State.value,
-                            driftY2State.value,
-                            rotation2State.value
-                        )
-                    }
-            )
+            GeometricPatternLayer(palette)
         }
 
         Column(
@@ -407,6 +331,83 @@ fun SalamScreenScaffold(
     }
 }
 
+@Composable
+private fun GeometricPatternLayer(palette: ThemePalette) {
+    val infiniteTransition = rememberInfiniteTransition(label = "scaffoldParallaxTransition")
+
+    val driftX1State = infiniteTransition.animateFloat(
+        initialValue = -15f,
+        targetValue = 15f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(28000, easing = androidx.compose.animation.core.LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "driftX1"
+    )
+    val driftY1State = infiniteTransition.animateFloat(
+        initialValue = -10f,
+        targetValue = 10f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(32000, easing = androidx.compose.animation.core.LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "driftY1"
+    )
+    val rotation1State = infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(180000, easing = androidx.compose.animation.core.LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "rotation1"
+    )
+
+    val driftX2State = infiniteTransition.animateFloat(
+        initialValue = 20f,
+        targetValue = -20f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(20000, easing = androidx.compose.animation.core.LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "driftX2"
+    )
+    val driftY2State = infiniteTransition.animateFloat(
+        initialValue = -15f,
+        targetValue = 15f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(24000, easing = androidx.compose.animation.core.LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "driftY2"
+    )
+    val rotation2State = infiniteTransition.animateFloat(
+        initialValue = 360f,
+        targetValue = 0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(120000, easing = androidx.compose.animation.core.LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "rotation2"
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .drawBehind {
+                drawGeometricPattern(
+                    palette,
+                    driftX1State.value,
+                    driftY1State.value,
+                    rotation1State.value,
+                    driftX2State.value,
+                    driftY2State.value,
+                    rotation2State.value
+                )
+            }
+    )
+}
+
 // ─────────────────────────────────────────────────
 // SALAM TOP BAR — Consistent back navigation
 // ─────────────────────────────────────────────────
@@ -417,7 +418,7 @@ fun SalamTopBar(
     modifier: Modifier = Modifier,
     actions: @Composable RowScope.() -> Unit = {}
 ) {
-    val palette by ThemeManager.currentPalette.collectAsState()
+    val palette = LocalThemePalette.current
 
     Row(
         modifier = modifier
@@ -464,7 +465,7 @@ fun SalamSectionHeader(
     modifier: Modifier = Modifier,
     trailingContent: @Composable (() -> Unit)? = null
 ) {
-    val palette by ThemeManager.currentPalette.collectAsState()
+    val palette = LocalThemePalette.current
 
     Row(
         modifier = modifier
@@ -508,7 +509,7 @@ fun SalamIconBadge(
     size: Dp = SalamSpacing.iconBackgroundSize,
     content: @Composable BoxScope.() -> Unit
 ) {
-    val palette by ThemeManager.currentPalette.collectAsState()
+    val palette = LocalThemePalette.current
 
     Box(
         modifier = modifier
@@ -634,7 +635,7 @@ fun Modifier.shimmerLoading() = composed {
         ),
         label = "shimmerTranslation"
     )
-    val palette by ThemeManager.currentPalette.collectAsState()
+    val palette = LocalThemePalette.current
     val shimmerColors = listOf(
         palette.surfaceVariant.copy(alpha = 0.6f),
         palette.shimmer,

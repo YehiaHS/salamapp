@@ -9,6 +9,7 @@ import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.media.RingtoneManager
 import android.net.Uri
+import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.yehia.prayertimes.MainActivity
@@ -46,11 +47,24 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
 
         // 2. Play Athan, Beep sound or keep silent if selected
         var customSoundUri: Uri? = null
-        var shouldPlayMediaPlayer = false
 
         when (notificationMode) {
             "ATHAN" -> {
-                shouldPlayMediaPlayer = true
+                val serviceIntent = Intent(context, AthanPlayerService::class.java).apply {
+                    putExtra("PRAYER_NAME", prayerName)
+                    putExtra("PRAYER_TIME", prayerTime)
+                }
+                try {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        context.startForegroundService(serviceIntent)
+                    } else {
+                        context.startService(serviceIntent)
+                    }
+                    Log.d(TAG, "AthanPlayerService started for Athan playback")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to start AthanPlayerService, falling back to default beep", e)
+                    customSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+                }
             }
             "BEEP" -> {
                 customSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
@@ -58,26 +72,6 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
             }
             "SILENT" -> {
                 Log.d(TAG, "Notification mode is SILENT; sound triggers are skipped")
-            }
-        }
-
-        if (shouldPlayMediaPlayer) {
-            // Check if user has embedded a raw 'athan' file
-            val athanResId = context.resources.getIdentifier("athan", "raw", context.packageName)
-            if (athanResId != 0) {
-                try {
-                    val mediaPlayer = MediaPlayer.create(context, athanResId)
-                    mediaPlayer.setOnCompletionListener { mp -> mp.release() }
-                    mediaPlayer.start()
-                    Log.d(TAG, "Playing custom embedded athan sound")
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error playing raw athan audio, falling back to default ringtone", e)
-                    customSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-                }
-            } else {
-                // If no custom raw resource, use default notification ringtone uri
-                customSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-                Log.d(TAG, "No raw 'athan' found; fell back to default notification sound")
             }
         }
 
@@ -96,7 +90,7 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
         )
 
         val notificationBuilder = NotificationCompat.Builder(context, NotificationHelper.CHANNEL_ID)
-            .setSmallIcon(context.applicationInfo.icon) // Use App launcher icon dynamically
+            .setSmallIcon(com.yehia.prayertimes.R.drawable.ic_tasbih) // Proper single-color vector icon
             .setContentTitle("Salam - $prayerName Time")
             .setContentText("It is time for $prayerName prayer ($prayerTime).")
             .setPriority(NotificationCompat.PRIORITY_HIGH)

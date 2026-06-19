@@ -530,52 +530,6 @@ fun SettingsScreen(
                 }
             }
 
-            // ── Reader Experience ─────────────────────────────────────
-            Spacer(modifier = Modifier.height(SalamSpacing.sectionGap))
-            SalamSectionHeader(title = "Reader Experience")
-            SalamCard(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = 2
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(SalamSpacing.cardPaddingInnerLarge),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Full Quran Reader",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.ExtraBold,
-                                color = palette.textPrimary
-                            )
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "Standard 604-page mushaf mode, verse bookmarks, reader themes, and full streamed recitation.",
-                            style = MaterialTheme.typography.labelSmall.copy(color = palette.textSecondary)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Surface(
-                        shape = SalamShapes.pill,
-                        color = palette.primary.copy(alpha = 0.12f),
-                        border = BorderStroke(1.dp, palette.primary.copy(alpha = 0.25f))
-                    ) {
-                        Text(
-                            text = "Included",
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.ExtraBold,
-                                color = palette.primary
-                            )
-                        )
-                    }
-                }
-            }
-
             // ── About Section ────────────────────────────────────────
             Spacer(modifier = Modifier.height(SalamSpacing.sectionGap))
             SalamSectionHeader(title = LanguageManager.get("settings_about"))
@@ -644,40 +598,6 @@ fun SettingsScreen(
                             )
                         }
                     }
-                }
-            }
-
-            SalamCard(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = 2
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(SalamSpacing.cardPaddingInnerLarge),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Islamic Companion",
-                        style = MaterialTheme.typography.headlineMedium.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                            color = palette.textPrimary
-                        )
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Version 2.0.0",
-                        style = MaterialTheme.typography.bodyMedium.copy(color = palette.textSecondary)
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = "Prayer times powered by Adhan library.\nBuilt with Jetpack Compose & Material 3.",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            color = palette.textMuted,
-                            textAlign = TextAlign.Center,
-                            lineHeight = 20.sp
-                        )
-                    )
                 }
             }
 

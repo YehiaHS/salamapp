@@ -1,6 +1,5 @@
 package com.yehia.prayertimes.ui.viewmodel
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.batoulapps.adhan.CalculationMethod
 import com.batoulapps.adhan.Madhab
@@ -15,15 +14,19 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.Locale
 
-class PrayerViewModel : ViewModel() {
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import com.yehia.prayertimes.utils.NotificationHelper
+
+class PrayerViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = PrayerRepository()
 
     // Location Coordinates
-    private val _latitude = MutableStateFlow(LocationHelper.DEFAULT_LATITUDE)
+    private val _latitude = MutableStateFlow(NotificationHelper.getSavedLatitude(application))
     val latitude: StateFlow<Double> = _latitude.asStateFlow()
 
-    private val _longitude = MutableStateFlow(LocationHelper.DEFAULT_LONGITUDE)
+    private val _longitude = MutableStateFlow(NotificationHelper.getSavedLongitude(application))
     val longitude: StateFlow<Double> = _longitude.asStateFlow()
 
     // Settings Configuration

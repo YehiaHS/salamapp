@@ -562,7 +562,7 @@ fun ColorSliders(
                     ),
                     modifier = Modifier
                         .weight(1f)
-                        .height(24.dp)
+                        .height(48.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
@@ -602,7 +602,7 @@ fun ColorSliders(
                     ),
                     modifier = Modifier
                         .weight(1f)
-                        .height(24.dp)
+                        .height(48.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
@@ -642,7 +642,7 @@ fun ColorSliders(
                     ),
                     modifier = Modifier
                         .weight(1f)
-                        .height(24.dp)
+                        .height(48.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(

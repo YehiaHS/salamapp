@@ -205,7 +205,7 @@ object LanguageManager {
             "title_zakat" to "Calculadora de Zakat", "title_hajj" to "Hajj e Umrah", "title_aideen" to "Assistente AiDeen",
             "title_locator" to "Mesquita e Halal Finder", "title_tracker" to "Suivi de Culto e Jejum", "title_names" to "99 Nomes de Deus",
             "settings_app_theme" to "Tema do App", "settings_amoled" to "AMOLED Preto Puro", "settings_app_lang" to "Idioma do App",
-            "settings_calc_method" to "Método de Cálculo", "settings_juristic_method" to "Escuela Jurídica",
+            "settings_calc_method" to "Método de Cálculo", "settings_juristic_method" to "Escola Jurídica",
             "settings_muezzin_voice" to "Voz do Muezim (Adhan)", "settings_about" to "Sobre"
         ),
         "ja" to mapOf(
@@ -213,9 +213,9 @@ object LanguageManager {
             "title_preferences" to "設定", "title_qibla" to "キブラ方向", "title_tasbih" to "タスビーフ計数",
             "title_duas" to "祈りと言葉", "title_hadith" to "今日のハディース", "title_calendar" to "ヒジュラ暦",
             "title_zakat" to "ザカート計算", "title_hajj" to "巡礼ガイド", "title_aideen" to "AIアシスタント",
-            "title_locator" to "モスク・ハラール検索", "title_tracker" to "礼拝と断食의 記録", "title_names" to "アッラーの99の美名",
+            "title_locator" to "モスク・ハラール検索", "title_tracker" to "礼拝と断食の記録", "title_names" to "アッラーの99の美名",
             "settings_app_theme" to "アプリテーマ", "settings_amoled" to "AMOLED漆黒モード", "settings_app_lang" to "アプリの言語",
-            "settings_calc_method" to "计算方法", "settings_juristic_method" to "法学派別",
+            "settings_calc_method" to "計算方法", "settings_juristic_method" to "法学派別",
             "settings_muezzin_voice" to "アザーン音声", "settings_about" to "情報"
         ),
         "ko" to mapOf(
@@ -241,7 +241,7 @@ object LanguageManager {
         "ha" to mapOf(
             "tab_prayers" to "Salloli", "tab_quran" to "Alkur'ani", "tab_dhikr" to "Zikiri", "tab_duas" to "Addu'o'i", "tab_more" to "Karin Bayani",
             "title_preferences" to "Zaɓuɓɓuka", "title_qibla" to "Neman Alkibila", "title_tasbih" to "Lissafin Tasbihi",
-            "title_duas" to "Addu'o'i da Zikirai", "title_hadisin" to "Hadisin Yau", "title_calendar" to "Tarihin Musulunci",
+            "title_duas" to "Addu'o'i da Zikirai", "title_hadith" to "Hadisin Yau", "title_calendar" to "Tarihin Musulunci",
             "title_zakat" to "Lissafin Zakka", "title_hajj" to "Aikin Hajji da Umra", "title_aideen" to "Mataimakin AiDeen",
             "title_locator" to "Neman Masallaci da Abincin Halal", "title_tracker" to "Bibiyar Salloli da Azumi", "title_names" to "Sunayen Allah 99",
             "settings_app_theme" to "Jigon Manhajja", "settings_amoled" to "AMOLED Baki Sosai", "settings_app_lang" to "Harshen Manhajja",

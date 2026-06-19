@@ -41,17 +41,7 @@ import kotlinx.coroutines.launch
 
 /*
 private fun getDecryptedKey(): String {
-    val xorArray = intArrayOf(
-        89, 65, 7, 69, 88, 7, 92, 27, 7, 26, 76, 76, 78, 72, 19, 79, 26, 78, 31, 18, 30,
-        28, 79, 73, 28, 28, 72, 27, 28, 25, 31, 78, 27, 78, 18, 28, 25, 29, 24, 19, 27,
-        30, 79, 78, 25, 25, 26, 78, 75, 30, 24, 31, 76, 76, 19, 30, 27, 19, 29, 29, 73,
-        78, 79, 78, 24, 19, 25, 24, 29, 78, 27, 72, 30
-    )
-    val sb = StringBuilder()
-    for (i in xorArray) {
-        sb.append((i xor 42).toChar())
-    }
-    return sb.toString()
+    return ""
 }
 
 private suspend fun fetchOpenRouterResponse(

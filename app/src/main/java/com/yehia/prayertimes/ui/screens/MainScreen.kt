@@ -1,5 +1,6 @@
 package com.yehia.prayertimes.ui.screens
 
+import android.content.Context
 import java.util.Locale
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -48,6 +49,8 @@ import androidx.compose.material.icons.filled.WbTwilight
 import androidx.compose.material.icons.filled.NightsStay
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -56,6 +59,11 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -109,7 +117,8 @@ import java.util.Calendar
 fun MainScreen(
     viewModel: PrayerViewModel,
     @Suppress("UNUSED_PARAMETER") onNavigateToQibla: () -> Unit,
-    onNavigateToSettings: () -> Unit
+    onNavigateToSettings: () -> Unit,
+    onDetectLocation: () -> Unit
 ) {
     val palette by ThemeManager.currentPalette.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
@@ -125,22 +134,27 @@ fun MainScreen(
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
-    val cityName = remember(lat, lng) {
-        try {
-            val geocoder = android.location.Geocoder(context, Locale.getDefault())
-            val addresses = geocoder.getFromLocation(lat, lng, 1)
-            if (!addresses.isNullOrEmpty()) {
-                val address = addresses[0]
-                val city = address.locality ?: address.subAdminArea ?: address.adminArea
-                val country = address.countryName
-                if (city != null && country != null) {
-                    "$city, $country"
-                } else city ?: country ?: "Karachi, Pakistan"
-            } else {
-                "Karachi, Pakistan"
+    var cityName by remember { mutableStateOf("") }
+    LaunchedEffect(lat, lng) {
+        withContext(Dispatchers.IO) {
+            val fallback = "${String.format(Locale.US, "%.3f", lat)}, ${String.format(Locale.US, "%.3f", lng)}"
+            val name = try {
+                val geocoder = android.location.Geocoder(context, Locale.getDefault())
+                val addresses = geocoder.getFromLocation(lat, lng, 1)
+                if (!addresses.isNullOrEmpty()) {
+                    val address = addresses[0]
+                    val city = address.locality ?: address.subAdminArea ?: address.adminArea
+                    val country = address.countryName
+                    if (city != null && country != null) {
+                        "$city, $country"
+                    } else city ?: country ?: fallback
+                } else {
+                    fallback
+                }
+            } catch (e: Exception) {
+                fallback
             }
-        } catch (e: Exception) {
-            "Karachi, Pakistan"
+            cityName = name
         }
     }
 
@@ -316,6 +330,15 @@ fun MainScreen(
 
     // Location & coordinates detail popup dialog
     if (showLocationDialog) {
+        var isManualMode by remember {
+            mutableStateOf(
+                context.getSharedPreferences("prayer_notification_prefs", Context.MODE_PRIVATE)
+                    .getBoolean("location_mode_manual", false)
+            )
+        }
+        var manualLatInput by remember { mutableStateOf(lat.toString()) }
+        var manualLngInput by remember { mutableStateOf(lng.toString()) }
+
         AlertDialog(
             onDismissRequest = { showLocationDialog = false },
             title = {
@@ -326,27 +349,121 @@ fun MainScreen(
                 )
             },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = "Salam uses your device location to compute highly accurate prayer times for your current coordinates.",
-                        style = MaterialTheme.typography.bodyMedium.copy(color = palette.textSecondary)
-                    )
-                    SalamCard(
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    // Mode selector
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        elevation = 1
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Text(
-                                text = "Latitude & Longitude",
-                                style = MaterialTheme.typography.labelSmall.copy(color = palette.textMuted)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.clickable { isManualMode = false }
+                        ) {
+                            RadioButton(
+                                selected = !isManualMode,
+                                onClick = { isManualMode = false },
+                                colors = RadioButtonDefaults.colors(selectedColor = palette.primary)
                             )
-                            Text(
-                                text = String.format(Locale.US, "%.5f, %.5f", lat, lng),
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    color = palette.primary,
-                                    fontWeight = FontWeight.Bold
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Automatic (GPS)", color = palette.textPrimary, style = MaterialTheme.typography.bodyMedium)
+                        }
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.clickable { isManualMode = true }
+                        ) {
+                            RadioButton(
+                                selected = isManualMode,
+                                onClick = { isManualMode = true },
+                                colors = RadioButtonDefaults.colors(selectedColor = palette.primary)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Manual Input", color = palette.textPrimary, style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+
+                    if (!isManualMode) {
+                        Text(
+                            text = "Salam uses your device location to compute highly accurate prayer times for your current coordinates.",
+                            style = MaterialTheme.typography.bodyMedium.copy(color = palette.textSecondary)
+                        )
+                        SalamCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            elevation = 1
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text(
+                                    text = "Current Coordinates",
+                                    style = MaterialTheme.typography.labelSmall.copy(color = palette.textMuted)
                                 )
-                            )
+                                Text(
+                                    text = String.format(Locale.US, "%.5f, %.5f", lat, lng),
+                                    style = MaterialTheme.typography.titleMedium.copy(
+                                        color = palette.primary,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(palette.primary.copy(alpha = 0.12f), SalamShapes.pill)
+                                .clickable {
+                                    onDetectLocation()
+                                    showLocationDialog = false
+                                }
+                                .padding(vertical = 10.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("Detect via GPS Now", color = palette.primary, fontWeight = FontWeight.Bold)
+                        }
+                    } else {
+                        Text(
+                            text = "Enter decimal coordinates manually to override current location.",
+                            style = MaterialTheme.typography.bodyMedium.copy(color = palette.textSecondary)
+                        )
+                        OutlinedTextField(
+                            value = manualLatInput,
+                            onValueChange = { manualLatInput = it },
+                            label = { Text("Latitude (-90 to 90)", color = palette.textSecondary) },
+                            modifier = Modifier.fillMaxWidth(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            singleLine = true
+                        )
+                        OutlinedTextField(
+                            value = manualLngInput,
+                            onValueChange = { manualLngInput = it },
+                            label = { Text("Longitude (-180 to 180)", color = palette.textSecondary) },
+                            modifier = Modifier.fillMaxWidth(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            singleLine = true
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(palette.primary, SalamShapes.pill)
+                                .clickable {
+                                    val targetLat = manualLatInput.toDoubleOrNull()
+                                    val targetLng = manualLngInput.toDoubleOrNull()
+                                    if (targetLat != null && targetLng != null && targetLat in -90.0..90.0 && targetLng in -180.0..180.0) {
+                                        val sharedPref = context.getSharedPreferences("prayer_notification_prefs", Context.MODE_PRIVATE)
+                                        sharedPref.edit()
+                                            .putBoolean("location_mode_manual", true)
+                                            .putString("latitude", targetLat.toString())
+                                            .putString("longitude", targetLng.toString())
+                                            .apply()
+                                        viewModel.setLocation(targetLat, targetLng)
+                                        showLocationDialog = false
+                                    } else {
+                                        android.widget.Toast.makeText(context, "Please enter valid coordinates", android.widget.Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                                .padding(vertical = 10.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("Apply Coordinates", color = palette.onPrimary, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -587,27 +704,29 @@ fun ActivePrayerHero(
 
                 // Bottom part: Location pill
                 Box(
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 12.dp)
                 ) {
                     Row(
                         modifier = Modifier
                             .background(Color(0xFF221F38).copy(alpha = 0.4f), RoundedCornerShape(50))
                             .border(0.5.dp, palette.outline.copy(alpha = 0.3f), RoundedCornerShape(50))
                             .clickable { onLocationClick() }
-                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
                             .align(Alignment.CenterStart),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.LocationOn,
                             contentDescription = "Location",
                             tint = palette.primary,
-                            modifier = Modifier.size(12.dp)
+                            modifier = Modifier.size(16.dp)
                         )
                         Text(
                             text = cityName,
-                            style = MaterialTheme.typography.labelSmall.copy(
+                            style = MaterialTheme.typography.bodyMedium.copy(
                                 color = palette.textSecondary,
                                 fontWeight = FontWeight.Bold
                             )
@@ -616,7 +735,7 @@ fun ActivePrayerHero(
                             imageVector = Icons.Default.KeyboardArrowRight,
                             contentDescription = "Chevron",
                             tint = palette.textMuted,
-                            modifier = Modifier.size(12.dp)
+                            modifier = Modifier.size(16.dp)
                         )
                     }
                 }

@@ -31,3 +31,8 @@ data class Surah(
 data class QuranDataWrapper(
     val surahs: List<Surah>
 )
+
+data class StandardQuranPage(
+    val pageNumber: Int,
+    val ayahs: List<QuranPageAyah>
+)

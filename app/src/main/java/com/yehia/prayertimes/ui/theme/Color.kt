@@ -1,6 +1,9 @@
 package com.yehia.prayertimes.ui.theme
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.runtime.staticCompositionLocalOf
+
+val LocalThemePalette = staticCompositionLocalOf { SalamTwilightPalette }
 
 data class ThemePalette(
     val background: Color,
