@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.Locale
+import java.util.TimeZone
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
@@ -28,6 +29,9 @@ class PrayerViewModel(application: Application) : AndroidViewModel(application) 
 
     private val _longitude = MutableStateFlow(NotificationHelper.getSavedLongitude(application))
     val longitude: StateFlow<Double> = _longitude.asStateFlow()
+
+    private val _timeZone = MutableStateFlow(TimeZone.getDefault())
+    val timeZone: StateFlow<TimeZone> = _timeZone.asStateFlow()
 
     // Settings Configuration
     private val _calculationMethod = MutableStateFlow(CalculationMethod.EGYPTIAN)
@@ -81,9 +85,15 @@ class PrayerViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun recalculate() {
+        val lat = _latitude.value
+        val lng = _longitude.value
+        val offsetHours = Math.round(lng / 15.0).toInt()
+        val gmtId = String.format(Locale.US, "GMT%+d", offsetHours)
+        _timeZone.value = TimeZone.getTimeZone(gmtId)
+
         _uiState.value = repository.calculatePrayerTimes(
-            latitude = _latitude.value,
-            longitude = _longitude.value,
+            latitude = lat,
+            longitude = lng,
             method = _calculationMethod.value,
             madhab = _madhab.value
         )

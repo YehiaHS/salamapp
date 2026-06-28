@@ -105,17 +105,57 @@ class PrayerWidgetProvider : AppWidgetProvider() {
         fun triggerUpdate(context: Context) {
             try {
                 val appWidgetManager = AppWidgetManager.getInstance(context)
+
+                // Trigger original medium-style widget
                 val thisWidget = ComponentName(context, PrayerWidgetProvider::class.java)
-                val appWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget)
-                if (appWidgetIds.isNotEmpty()) {
-                    val intent = Intent(context, PrayerWidgetProvider::class.java).apply {
-                        action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
-                        putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds)
-                    }
-                    context.sendBroadcast(intent)
+                val ids = appWidgetManager.getAppWidgetIds(thisWidget)
+                if (ids.isNotEmpty()) {
+                    context.sendBroadcast(
+                        Intent(context, PrayerWidgetProvider::class.java).apply {
+                            action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+                            putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
+                        }
+                    )
                 }
-            } catch (e: Exception) {
-                // Fail silently
+
+                // Trigger small widget
+                val smallWidget = ComponentName(context, PrayerWidgetSmallProvider::class.java)
+                val smallIds = appWidgetManager.getAppWidgetIds(smallWidget)
+                if (smallIds.isNotEmpty()) {
+                    context.sendBroadcast(
+                        Intent(context, PrayerWidgetSmallProvider::class.java).apply {
+                            action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+                            putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, smallIds)
+                        }
+                    )
+                }
+
+                // Trigger medium widget
+                val mediumWidget = ComponentName(context, PrayerWidgetMediumProvider::class.java)
+                val mediumIds = appWidgetManager.getAppWidgetIds(mediumWidget)
+                if (mediumIds.isNotEmpty()) {
+                    context.sendBroadcast(
+                        Intent(context, PrayerWidgetMediumProvider::class.java).apply {
+                            action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+                            putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, mediumIds)
+                        }
+                    )
+                }
+
+                // Trigger large widget
+                val largeWidget = ComponentName(context, PrayerWidgetLargeProvider::class.java)
+                val largeIds = appWidgetManager.getAppWidgetIds(largeWidget)
+                if (largeIds.isNotEmpty()) {
+                    context.sendBroadcast(
+                        Intent(context, PrayerWidgetLargeProvider::class.java).apply {
+                            action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+                            putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, largeIds)
+                        }
+                    )
+                }
+
+            } catch (_: Exception) {
+                // Fail silently — widget updates are best-effort
             }
         }
     }

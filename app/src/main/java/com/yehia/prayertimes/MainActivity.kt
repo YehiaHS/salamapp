@@ -125,6 +125,12 @@ class MainActivity : ComponentActivity() {
                 val madhab by prayerViewModel.madhab.collectAsState()
                 val latitude by prayerViewModel.latitude.collectAsState()
                 val longitude by prayerViewModel.longitude.collectAsState()
+                val timeZone by prayerViewModel.timeZone.collectAsState()
+
+                // Update active palette when location or timezone changes (specifically for TIME_OF_DAY theme)
+                LaunchedEffect(timeZone) {
+                    ThemeManager.updateTargetTimeZone(context, timeZone)
+                }
 
                 // Reschedule alarms dynamically when prayer parameters change
                 LaunchedEffect(calculationMethod, madhab, latitude, longitude) {
@@ -206,8 +212,8 @@ class MainActivity : ComponentActivity() {
                                         selectedIconColor = palette.primary,
                                         selectedTextColor = palette.primary,
                                         indicatorColor = Color.Transparent,
-                                        unselectedIconColor = palette.textMuted,
-                                        unselectedTextColor = palette.textMuted
+                                        unselectedIconColor = if (palette.isLight) palette.textSecondary else palette.textMuted,
+                                        unselectedTextColor = if (palette.isLight) palette.textSecondary else palette.textMuted
                                     )
                                 )
                                 NavigationBarItem(
@@ -219,8 +225,8 @@ class MainActivity : ComponentActivity() {
                                         selectedIconColor = palette.primary,
                                         selectedTextColor = palette.primary,
                                         indicatorColor = Color.Transparent,
-                                        unselectedIconColor = palette.textMuted,
-                                        unselectedTextColor = palette.textMuted
+                                        unselectedIconColor = if (palette.isLight) palette.textSecondary else palette.textMuted,
+                                        unselectedTextColor = if (palette.isLight) palette.textSecondary else palette.textMuted
                                     )
                                 )
                                 NavigationBarItem(
@@ -232,8 +238,8 @@ class MainActivity : ComponentActivity() {
                                         selectedIconColor = palette.primary,
                                         selectedTextColor = palette.primary,
                                         indicatorColor = Color.Transparent,
-                                        unselectedIconColor = palette.textMuted,
-                                        unselectedTextColor = palette.textMuted
+                                        unselectedIconColor = if (palette.isLight) palette.textSecondary else palette.textMuted,
+                                        unselectedTextColor = if (palette.isLight) palette.textSecondary else palette.textMuted
                                     )
                                 )
                                 NavigationBarItem(
@@ -245,8 +251,8 @@ class MainActivity : ComponentActivity() {
                                         selectedIconColor = palette.primary,
                                         selectedTextColor = palette.primary,
                                         indicatorColor = Color.Transparent,
-                                        unselectedIconColor = palette.textMuted,
-                                        unselectedTextColor = palette.textMuted
+                                        unselectedIconColor = if (palette.isLight) palette.textSecondary else palette.textMuted,
+                                        unselectedTextColor = if (palette.isLight) palette.textSecondary else palette.textMuted
                                     )
                                 )
                                 NavigationBarItem(
@@ -261,8 +267,8 @@ class MainActivity : ComponentActivity() {
                                         selectedIconColor = palette.primary,
                                         selectedTextColor = palette.primary,
                                         indicatorColor = Color.Transparent,
-                                        unselectedIconColor = palette.textMuted,
-                                        unselectedTextColor = palette.textMuted
+                                        unselectedIconColor = if (palette.isLight) palette.textSecondary else palette.textMuted,
+                                        unselectedTextColor = if (palette.isLight) palette.textSecondary else palette.textMuted
                                     )
                                 )
                             }
@@ -340,6 +346,7 @@ class MainActivity : ComponentActivity() {
                                     }
                                     MoreSubScreen.HIJRI -> {
                                         HijriCalendarScreen(
+                                            viewModel = prayerViewModel,
                                             onNavigateBack = { activeSubScreen = MoreSubScreen.NONE }
                                         )
                                     }

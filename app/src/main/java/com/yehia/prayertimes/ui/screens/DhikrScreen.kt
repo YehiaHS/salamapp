@@ -1,4 +1,4 @@
-package com.yehia.prayertimes.ui.screens
+﻿package com.yehia.prayertimes.ui.screens
 
 import android.content.Context
 import android.view.SoundEffectConstants
@@ -23,10 +23,16 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Adjust
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ColorLens
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Refresh
@@ -65,6 +71,31 @@ import com.yehia.prayertimes.ui.theme.staggeredEntrance
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+fun savePresetsToPrefs(presets: List<Triple<String, String, String>>, prefs: android.content.SharedPreferences) {
+    val editor = prefs.edit()
+    val previousCount = prefs.getInt("preset_count_v3", 0)
+    for (i in 0 until previousCount) {
+        editor.remove("preset_ar_$i")
+        editor.remove("preset_tr_$i")
+        editor.remove("preset_en_$i")
+    }
+    editor.putInt("preset_count_v3", presets.size)
+    presets.forEachIndexed { i, p ->
+        editor.putString("preset_ar_$i", p.first)
+        editor.putString("preset_tr_$i", p.second)
+        editor.putString("preset_en_$i", p.third)
+    }
+    editor.apply()
+}
+
+fun getPresetDisplayName(preset: Triple<String, String, String>?): String {
+    if (preset == null) return "Select"
+    if (preset.second.isNotEmpty()) return preset.second
+    if (preset.third.isNotEmpty()) return preset.third
+    if (preset.first.isNotEmpty()) return preset.first
+    return "Dhikr"
+}
+
 @Composable
 fun DhikrScreen() {
     val palette by ThemeManager.currentPalette.collectAsState()
@@ -99,16 +130,42 @@ fun DhikrScreen() {
     var showSettingsPopup by remember { mutableStateOf(false) }
     var isCelebrated by remember { mutableStateOf(false) }
 
-    // Click motion animation (horizontal lines expand)
     val clickAnimation = remember { Animatable(0f) }
 
-    // Supplications
-    val presets = listOf(
-        Triple("سُبْحَانَ اللَّهِ", "SubhanAllah", "Glory be to Allah"),
-        Triple("الْحَمْدُ لِلَّهِ", "Alhamdulillah", "Praise be to Allah"),
-        Triple("اللَّهُ أَكْبَرُ", "Allahu Akbar", "Allah is the Greatest"),
-        Triple("لَا إِلَٰهَ إِلَّا اللَّهُ", "La ilaha illallah", "There is no god but Allah")
+    // Dynamic dynamic presets loading with custom items saved to SharedPreferences
+    val defaultPresets = listOf(
+        Triple("Ø³ÙØ¨Ù’Ø­ÙŽØ§Ù†ÙŽ Ø§Ù„Ù„ÙŽÙ‘Ù‡Ù", "SubhanAllah", "Glory be to Allah"),
+        Triple("Ø§Ù„Ù’Ø­ÙŽÙ…Ù’Ø¯Ù Ù„ÙÙ„ÙŽÙ‘Ù‡Ù", "Alhamdulillah", "Praise be to Allah"),
+        Triple("Ø§Ù„Ù„ÙŽÙ‘Ù‡Ù Ø£ÙŽÙƒÙ’Ø¨ÙŽØ±Ù", "Allahu Akbar", "Allah is the Greatest"),
+        Triple("Ù„ÙŽØ§ Ø¥ÙÙ„ÙŽÙ°Ù‡ÙŽ Ø¥ÙÙ„ÙŽÙ‘Ø§ Ø§Ù„Ù„ÙŽÙ‘Ù‡Ù", "La ilaha illallah", "There is no god but Allah"),
+        Triple(
+            "Ø£ÙŽØ³Ù’ØªÙŽØºÙ’ÙÙØ±Ù Ø§Ù„Ù„Ù‘Ù°Ù‡ÙŽ ÙˆÙŽØ£ÙŽØªÙÙˆÙ’Ø¨Ù Ø¥ÙÙ„ÙŽÙŠÙ’Ù‡Ù.",
+            "Astaghfirullah wa atubu ilayh.",
+            "I seek Allah's forgiveness and repent to Him."
+        )
     )
+
+    val presets = remember {
+        val list = mutableStateListOf<Triple<String, String, String>>()
+        val countPresets = prefs.getInt("preset_count_v3", -1)
+        if (countPresets == -1) {
+            list.addAll(defaultPresets)
+            savePresetsToPrefs(list, prefs)
+        } else {
+            for (i in 0 until countPresets) {
+                val arabic = prefs.getString("preset_ar_$i", "") ?: ""
+                val translit = prefs.getString("preset_tr_$i", "") ?: ""
+                val english = prefs.getString("preset_en_$i", "") ?: ""
+                list.add(Triple(arabic, translit, english))
+            }
+        }
+        list
+    }
+
+    var showAddCustomDhikrDialog by remember { mutableStateOf(false) }
+    var customDhikrArabic by remember { mutableStateOf("") }
+    var customDhikrTranslit by remember { mutableStateOf("") }
+    var customDhikrEnglish by remember { mutableStateOf("") }
 
     val clickHapticType = when (selectedBeadType) {
         "wood" -> HapticFeedbackType.TextHandleMove
@@ -118,6 +175,8 @@ fun DhikrScreen() {
     val screenInteractionSource = remember { MutableInteractionSource() }
 
     SalamScreenScaffold(showGeometricPattern = false) {
+        var showPresetsDropdown by remember { mutableStateOf(false) }
+
         // Top Bar: Title + Subtitle on Left, Context Menu Button on Right
         Row(
             modifier = Modifier
@@ -143,17 +202,207 @@ fun DhikrScreen() {
                 )
             }
 
-            IconButton(
-                onClick = { showSettingsPopup = !showSettingsPopup },
-                modifier = Modifier
-                    .size(44.dp)
-                    .background(palette.surfaceVariant.copy(alpha = 0.5f), CircleShape)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.MoreVert,
-                    contentDescription = "Settings",
-                    tint = palette.textPrimary
-                )
+                // Dropdown Selector Pill
+                Box {
+                    Row(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(palette.surfaceVariant.copy(alpha = 0.5f))
+                            .clickable { showPresetsDropdown = true }
+                            .padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = getPresetDisplayName(presets.getOrNull(activePresetIndex)),
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                color = palette.primary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Icon(
+                            imageVector = Icons.Default.KeyboardArrowDown,
+                            contentDescription = "Select Dhikr",
+                            tint = palette.primary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = showPresetsDropdown,
+                        onDismissRequest = { showPresetsDropdown = false },
+                        modifier = Modifier
+                            .background(palette.surface)
+                            .border(1.dp, palette.outline.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
+                            .width(240.dp)
+                    ) {
+                        DropdownMenuItem(
+                            text = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.Add,
+                                        contentDescription = "Add Custom",
+                                        tint = palette.primary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Add Custom Dhikr...", color = palette.primary, fontWeight = FontWeight.Bold)
+                                }
+                            },
+                            onClick = {
+                                showPresetsDropdown = false
+                                showAddCustomDhikrDialog = true
+                            }
+                        )
+
+                        HorizontalDivider(color = palette.outline.copy(alpha = 0.1f))
+
+                        presets.forEachIndexed { index, preset ->
+                            DropdownMenuItem(
+                                text = {
+                                    Column {
+                                        if (preset.first.isNotEmpty()) {
+                                            Text(
+                                                text = preset.first,
+                                                fontFamily = AmiriFontFamily,
+                                                fontSize = 18.sp,
+                                                color = palette.textPrimary
+                                            )
+                                        }
+                                        val details = listOf(preset.second, preset.third).filter { it.isNotEmpty() }
+                                        if (details.isNotEmpty()) {
+                                            Text(
+                                                text = details.joinToString(" - "),
+                                                style = MaterialTheme.typography.labelSmall.copy(color = palette.textSecondary)
+                                            )
+                                        } else if (preset.first.isEmpty()) {
+                                            Text(
+                                                text = "Empty Supplication",
+                                                style = MaterialTheme.typography.labelSmall.copy(color = palette.textSecondary)
+                                            )
+                                        }
+                                    }
+                                },
+                                onClick = {
+                                    activePresetIndex = index
+                                    prefs.edit().putInt("dhikr_active_preset_idx", index).apply()
+                                    count = 0
+                                    showPresetsDropdown = false
+                                },
+                                trailingIcon = {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        // Move Up Button
+                                        if (index > 0) {
+                                            IconButton(
+                                                onClick = {
+                                                    val temp = presets[index]
+                                                    presets[index] = presets[index - 1]
+                                                    presets[index - 1] = temp
+                                                    savePresetsToPrefs(presets, prefs)
+                                                    
+                                                    if (activePresetIndex == index) {
+                                                        activePresetIndex = index - 1
+                                                    } else if (activePresetIndex == index - 1) {
+                                                        activePresetIndex = index
+                                                    }
+                                                    prefs.edit().putInt("dhikr_active_preset_idx", activePresetIndex).apply()
+                                                },
+                                                modifier = Modifier.size(24.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.ArrowUpward,
+                                                    contentDescription = "Move Up",
+                                                    tint = palette.textSecondary,
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            }
+                                        }
+
+                                        // Move Down Button
+                                        if (index < presets.size - 1) {
+                                            IconButton(
+                                                onClick = {
+                                                    val temp = presets[index]
+                                                    presets[index] = presets[index + 1]
+                                                    presets[index + 1] = temp
+                                                    savePresetsToPrefs(presets, prefs)
+                                                    
+                                                    if (activePresetIndex == index) {
+                                                        activePresetIndex = index + 1
+                                                    } else if (activePresetIndex == index + 1) {
+                                                        activePresetIndex = index
+                                                    }
+                                                    prefs.edit().putInt("dhikr_active_preset_idx", activePresetIndex).apply()
+                                                },
+                                                modifier = Modifier.size(24.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.ArrowDownward,
+                                                    contentDescription = "Move Down",
+                                                    tint = palette.textSecondary,
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            }
+                                        }
+
+                                        // Delete Button
+                                        if (presets.size > 1) {
+                                            IconButton(
+                                                onClick = {
+                                                    presets.removeAt(index)
+                                                    savePresetsToPrefs(presets, prefs)
+                                                    
+                                                    if (activePresetIndex >= presets.size) {
+                                                        activePresetIndex = presets.size - 1
+                                                    }
+                                                    prefs.edit().putInt("dhikr_active_preset_idx", activePresetIndex).apply()
+                                                    count = 0
+                                                },
+                                                modifier = Modifier.size(24.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Delete,
+                                                    contentDescription = "Delete",
+                                                    tint = palette.accent,
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            }
+                                        }
+
+                                        if (activePresetIndex == index) {
+                                            Icon(
+                                                imageVector = Icons.Default.Check,
+                                                contentDescription = "Active",
+                                                tint = palette.primary,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
+
+                IconButton(
+                    onClick = { showSettingsPopup = !showSettingsPopup },
+                    modifier = Modifier
+                        .size(44.dp)
+                        .background(palette.surfaceVariant.copy(alpha = 0.5f), CircleShape)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "Settings",
+                        tint = palette.textPrimary
+                    )
+                }
             }
         }
 
@@ -182,7 +431,11 @@ fun DhikrScreen() {
 
                         if (count == selectedTarget) {
                             if (hapticEnabled) {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                scope.launch {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    delay(120)
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                }
                             }
                             isCelebrated = true
                             scope.launch {
@@ -388,32 +641,7 @@ fun DhikrScreen() {
                         }
                     }
 
-                    // 4. Draw Indicator Trail `<- ... ->` to the left of the active bead
                     val activePos = getPointOnPath(activeBeadT)
-                    val trailStartX = activePos.x - 70.dp.toPx()
-                    val trailEndX = activePos.x - 14.dp.toPx()
-                    val trailY = activePos.y
-
-                    val trailColor = palette.textSecondary.copy(alpha = 0.5f)
-                    val dashPathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 6f), 0f)
-
-                    // Dashed line
-                    drawLine(
-                        color = trailColor,
-                        start = Offset(trailStartX, trailY),
-                        end = Offset(trailEndX, trailY),
-                        strokeWidth = 2f,
-                        pathEffect = dashPathEffect
-                    )
-
-                    // Double arrow heads
-                    val arrowSize = 6.dp.toPx()
-                    // Left Arrow
-                    drawLine(color = trailColor, start = Offset(trailStartX, trailY), end = Offset(trailStartX + arrowSize, trailY - arrowSize), strokeWidth = 2f)
-                    drawLine(color = trailColor, start = Offset(trailStartX, trailY), end = Offset(trailStartX + arrowSize, trailY + arrowSize), strokeWidth = 2f)
-                    // Right Arrow
-                    drawLine(color = trailColor, start = Offset(trailEndX, trailY), end = Offset(trailEndX - arrowSize, trailY - arrowSize), strokeWidth = 2f)
-                    drawLine(color = trailColor, start = Offset(trailEndX, trailY), end = Offset(trailEndX - arrowSize, trailY + arrowSize), strokeWidth = 2f)
 
                     // 5. Draw Motion Blur / Swipe Trail on Click
                     if (clickAnimation.value > 0f) {
@@ -440,15 +668,39 @@ fun DhikrScreen() {
                     .padding(start = SalamSpacing.cardPaddingInner),
                 verticalArrangement = Arrangement.Center
             ) {
-                // Supplication text aligned, without pill container or emoji
                 Text(
-                    text = presets[activePresetIndex].first,
+                    text = presets.getOrNull(activePresetIndex)?.first ?: "",
                     fontFamily = AmiriFontFamily,
                     fontWeight = FontWeight.Bold,
                     fontSize = 32.sp,
                     color = palette.primary,
                     modifier = Modifier.padding(start = 6.dp)
                 )
+
+                presets.getOrNull(activePresetIndex)?.second?.let { translit ->
+                    if (translit.isNotEmpty()) {
+                        Text(
+                            text = translit,
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                color = palette.textPrimary,
+                                fontWeight = FontWeight.Medium
+                            ),
+                            modifier = Modifier.padding(start = 6.dp, top = 2.dp)
+                        )
+                    }
+                }
+
+                presets.getOrNull(activePresetIndex)?.third?.let { english ->
+                    if (english.isNotEmpty()) {
+                        Text(
+                            text = english,
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                color = palette.textSecondary
+                            ),
+                            modifier = Modifier.padding(start = 6.dp, top = 2.dp)
+                        )
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -843,6 +1095,91 @@ fun DhikrScreen() {
             confirmButton = {
                 TextButton(onClick = { showAboutDialog = false }) {
                     Text("Close", color = palette.primary)
+                }
+            },
+            containerColor = palette.surface
+        )
+    }
+
+    // Add Custom Dhikr Dialog
+    if (showAddCustomDhikrDialog) {
+        AlertDialog(
+            onDismissRequest = { showAddCustomDhikrDialog = false },
+            title = { Text("Add Custom Dhikr", color = palette.textPrimary) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = customDhikrArabic,
+                        onValueChange = { customDhikrArabic = it },
+                        label = { Text("Arabic Text") },
+                        singleLine = true,
+                        placeholder = { Text("e.g. Ø³ÙØ¨Ù’Ø­ÙŽØ§Ù†ÙŽ Ø§Ù„Ù„ÙŽÙ‘Ù‡Ù") },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = palette.primary,
+                            focusedLabelColor = palette.primary,
+                            focusedTextColor = palette.textPrimary,
+                            unfocusedTextColor = palette.textPrimary
+                        )
+                    )
+                    OutlinedTextField(
+                        value = customDhikrTranslit,
+                        onValueChange = { customDhikrTranslit = it },
+                        label = { Text("Transliteration") },
+                        singleLine = true,
+                        placeholder = { Text("e.g. SubhanAllah") },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = palette.primary,
+                            focusedLabelColor = palette.primary,
+                            focusedTextColor = palette.textPrimary,
+                            unfocusedTextColor = palette.textPrimary
+                        )
+                    )
+                    OutlinedTextField(
+                        value = customDhikrEnglish,
+                        onValueChange = { customDhikrEnglish = it },
+                        label = { Text("Translation (English)") },
+                        singleLine = true,
+                        placeholder = { Text("e.g. Glory be to Allah") },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = palette.primary,
+                            focusedLabelColor = palette.primary,
+                            focusedTextColor = palette.textPrimary,
+                            unfocusedTextColor = palette.textPrimary
+                        )
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (customDhikrArabic.isNotBlank() || customDhikrTranslit.isNotBlank() || customDhikrEnglish.isNotBlank()) {
+                            val newPreset = Triple(customDhikrArabic.trim(), customDhikrTranslit.trim(), customDhikrEnglish.trim())
+                            presets.add(newPreset)
+                            savePresetsToPrefs(presets, prefs)
+                            
+                            activePresetIndex = presets.size - 1
+                            prefs.edit().putInt("dhikr_active_preset_idx", activePresetIndex).apply()
+                            count = 0
+                            
+                            customDhikrArabic = ""
+                            customDhikrTranslit = ""
+                            customDhikrEnglish = ""
+                            showAddCustomDhikrDialog = false
+                        } else {
+                            Toast.makeText(context, "Please fill at least one field", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                ) {
+                    Text("Save & Select", color = palette.primary)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showAddCustomDhikrDialog = false
+                    }
+                ) {
+                    Text("Cancel", color = palette.textSecondary)
                 }
             },
             containerColor = palette.surface

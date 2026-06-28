@@ -56,7 +56,8 @@ object LanguageManager {
             "title_locator" to "Mosque & Halal Finder", "title_tracker" to "Worship & Fasting", "title_names" to "99 Names of Allah",
             "settings_app_theme" to "App Theme", "settings_amoled" to "AMOLED Pure Black", "settings_app_lang" to "App Language",
             "settings_calc_method" to "Calculation Method", "settings_juristic_method" to "Juristic Method",
-            "settings_muezzin_voice" to "Muezzin Voice (Athan)", "settings_about" to "About"
+            "settings_muezzin_voice" to "Muezzin Voice (Athan)", "settings_about" to "About",
+            "settings_gradients" to "Background Gradients", "settings_gradients_desc" to "Show radial glowing accents behind content"
         ),
         "ar" to mapOf(
             "tab_prayers" to "الصلوات", "tab_quran" to "القرآن", "tab_dhikr" to "الأذكار", "tab_duas" to "الأدعية", "tab_more" to "المزيد",
@@ -66,7 +67,8 @@ object LanguageManager {
             "title_locator" to "المساجد والحلال", "title_tracker" to "متابع العبادات والصيام", "title_names" to "أسماء الله الحسنى",
             "settings_app_theme" to "مظهر التطبيق", "settings_amoled" to "شاشة أموليد سوداء", "settings_app_lang" to "لغة التطبيق",
             "settings_calc_method" to "طريقة الحساب", "settings_juristic_method" to "المذهب الفقهي",
-            "settings_muezzin_voice" to "صوت المؤذن (الأذان)", "settings_about" to "حول التطبيق"
+            "settings_muezzin_voice" to "صوت المؤذن (الأذان)", "settings_about" to "حول التطبيق",
+            "settings_gradients" to "تدرج الخلفية الملون", "settings_gradients_desc" to "إظهار تأثير إضاءة ملونة خلف المحتوى"
         ),
         "tr" to mapOf(
             "tab_prayers" to "Dualar", "tab_quran" to "Kuran", "tab_dhikr" to "Zikir", "tab_duas" to "Dualar", "tab_more" to "Daha Fazla",
@@ -252,102 +254,110 @@ object LanguageManager {
 
     private val extraTranslations = mapOf(
         "en" to mapOf(
-            "fajr" to "Fajr", "sunrise" to "Sunrise", "dhuhr" to "Dhuhr", "asr" to "Asr", "maghrib" to "Maghrib", "isha" to "Isha",
+            "fajr" to "Fajr", "sunrise" to "Sunrise", "dhuhr" to "Dhuhr", "asr" to "Asr", "maghrib" to "Maghrib", "isha" to "Isha", "qiyam" to "Qiyam (Tahajjud)",
             "settings_notifications" to "Notifications Preferences", "mode_athan" to "Athan", "mode_beep" to "Beep", "mode_silent" to "Silent", "mode_off" to "Off",
-            "next_prayer" to "Next Prayer", "now" to "Now", "todays_prayers" to "Today's Prayers"
+            "next_prayer" to "Next Prayer", "now" to "Now", "todays_prayers" to "Today's Prayers",
+            "pre_prayer_reminder" to "Early Reminder", "iqamah_reminder" to "Iqamah Alert", "minutes_before" to "mins before", "minutes_after" to "mins after", "none" to "None",
+            "sunnah_fajr" to "Sunnah: 2 Rak'ahs before", "sunnah_dhuhr" to "Sunnah: 4 Rak'ahs before, 2 after", "sunnah_asr" to "Sunnah: 4 Rak'ahs before (Recommended)", "sunnah_maghrib" to "Sunnah: 2 Rak'ahs after", "sunnah_isha" to "Sunnah: 2 Rak'ahs after",
+            "sub_fajr" to "Dawn", "sub_sunrise" to "Sunrise", "sub_dhuhr" to "Midday", "sub_asr" to "Afternoon", "sub_maghrib" to "Sunset", "sub_isha" to "Night", "sub_qiyam" to "Last third of the night",
+            "greeting" to "Assalamu Alaikum", "salam" to "Salam", "may_peace" to "May peace be upon you", "hijri_date" to "Hijri Date"
         ),
         "ar" to mapOf(
-            "fajr" to "الفجر", "sunrise" to "الشروق", "dhuhr" to "الظهر", "asr" to "العصر", "maghrib" to "المغرب", "isha" to "العشاء",
+            "fajr" to "الفجر", "sunrise" to "الشروق", "dhuhr" to "الظهر", "asr" to "العصر", "maghrib" to "المغرب", "isha" to "العشاء", "qiyam" to "قيام الليل",
             "settings_notifications" to "إعدادات الإشعارات", "mode_athan" to "أذان", "mode_beep" to "رنين", "mode_silent" to "صامت", "mode_off" to "إيقاف",
-            "next_prayer" to "الصلاة القادمة", "now" to "الآن", "todays_prayers" to "صلوات اليوم"
+            "next_prayer" to "الصلاة القادمة", "now" to "الآن", "todays_prayers" to "صلوات اليوم",
+            "pre_prayer_reminder" to "تذكير مبكر", "iqamah_reminder" to "تنبيه الإقامة", "minutes_before" to "دقيقة قبل", "minutes_after" to "دقيقة بعد", "none" to "لا يوجد",
+            "sunnah_fajr" to "السنة: ٢ ركعة قبل الفريضة", "sunnah_dhuhr" to "السنة: ٤ ركعات قبل و٢ بعد", "sunnah_asr" to "السنة: ٤ ركعات قبل (مستحبة)", "sunnah_maghrib" to "السنة: ٢ ركعة بعد", "sunnah_isha" to "السنة: ٢ ركعة بعد",
+            "sub_fajr" to "الفجر", "sub_sunrise" to "شروق الشمس", "sub_dhuhr" to "الزوال", "sub_asr" to "المساء", "sub_maghrib" to "غروب الشمس", "sub_isha" to "الليل", "sub_qiyam" to "ثلث الليل الآخر",
+            "greeting" to "السلام عليكم", "salam" to "سلام", "may_peace" to "السلام عليكم ورحمة الله وبركاته", "hijri_date" to "التاريخ الهجري"
         ),
         "tr" to mapOf(
-            "fajr" to "Fecr", "sunrise" to "Güneş", "dhuhr" to "Öğle", "asr" to "İkindi", "maghrib" to "Akşam", "isha" to "Yatsı",
+            "fajr" to "Fecr", "sunrise" to "Güneş", "dhuhr" to "Öğle", "asr" to "İkindi", "maghrib" to "Akşam", "isha" to "Yatsı", "qiyam" to "Teheccüd",
             "settings_notifications" to "Bildirim Tercihleri", "mode_athan" to "Ezan", "mode_beep" to "Bip", "mode_silent" to "Sessiz", "mode_off" to "Kapalı",
             "next_prayer" to "Sıraaki Ezan", "now" to "Şimdi", "todays_prayers" to "Bugünün Ezan Vakitleri"
         ),
         "fr" to mapOf(
-            "fajr" to "Fajr", "sunrise" to "Lever du soleil", "dhuhr" to "Dhuhr", "asr" to "Asr", "maghrib" to "Maghrib", "isha" to "Isha",
+            "fajr" to "Fajr", "sunrise" to "Lever du soleil", "dhuhr" to "Dhuhr", "asr" to "Asr", "maghrib" to "Maghrib", "isha" to "Isha", "qiyam" to "Qiyam (Tahajjud)",
             "settings_notifications" to "Préférences de Notifications", "mode_athan" to "Adhan", "mode_beep" to "Bip", "mode_silent" to "Silencieux", "mode_off" to "Désactivé",
             "next_prayer" to "Prochaine Prière", "now" to "Maintenant", "todays_prayers" to "Prières d'Aujourd'hui"
         ),
         "es" to mapOf(
-            "fajr" to "Fajr", "sunrise" to "Amanecer", "dhuhr" to "Dhuhr", "asr" to "Asr", "maghrib" to "Maghrib", "isha" to "Isha",
+            "fajr" to "Fajr", "sunrise" to "Amanecer", "dhuhr" to "Dhuhr", "asr" to "Asr", "maghrib" to "Maghrib", "isha" to "Isha", "qiyam" to "Qiyam (Tahajjud)",
             "settings_notifications" to "Preferencias de Notificaciones", "mode_athan" to "Adhan", "mode_beep" to "Pitido", "mode_silent" to "Silencioso", "mode_off" to "Apagado",
             "next_prayer" to "Próxima Oración", "now" to "Ahora", "todays_prayers" to "Oraciones de Hoy"
         ),
         "de" to mapOf(
-            "fajr" to "Fadschr", "sunrise" to "Sonnenaufgang", "dhuhr" to "Dhuhr", "asr" to "Asr", "maghrib" to "Maghrib", "isha" to "Ischa",
+            "fajr" to "Fadschr", "sunrise" to "Sonnenaufgang", "dhuhr" to "Dhuhr", "asr" to "Asr", "maghrib" to "Maghrib", "isha" to "Ischa", "qiyam" to "Qiyam (Tahajjud)",
             "settings_notifications" to "Benachrichtigungseinstellungen", "mode_athan" to "Adhan", "mode_beep" to "Signalton", "mode_silent" to "Stumm", "mode_off" to "Aus",
             "next_prayer" to "Nächstes Gebet", "now" to "Jetzt", "todays_prayers" to "Heutige Gebete"
         ),
         "id" to mapOf(
-            "fajr" to "Subuh", "sunrise" to "Terbit", "dhuhr" to "Dzuhur", "asr" to "Ashar", "maghrib" to "Maghrib", "isha" to "Isya",
+            "fajr" to "Subuh", "sunrise" to "Terbit", "dhuhr" to "Dzuhur", "asr" to "Ashar", "maghrib" to "Maghrib", "isha" to "Isya", "qiyam" to "Qiyamul Lail",
             "settings_notifications" to "Preferensi Notifikasi", "mode_athan" to "Adzan", "mode_beep" to "Bip", "mode_silent" to "Senyap", "mode_off" to "Mati",
             "next_prayer" to "Salat Berikutnya", "now" to "Sekarang", "todays_prayers" to "Jadwal Salat Hari Ini"
         ),
         "ms" to mapOf(
-            "fajr" to "Subuh", "sunrise" to "Syuruk", "dhuhr" to "Zohor", "asr" to "Asar", "maghrib" to "Maghrib", "isha" to "Isyak",
+            "fajr" to "Subuh", "sunrise" to "Syuruk", "dhuhr" to "Zohor", "asr" to "Asar", "maghrib" to "Maghrib", "isha" to "Isyak", "qiyam" to "Qiyamullail",
             "settings_notifications" to "Pilihan Pemberitahuan", "mode_athan" to "Azan", "mode_beep" to "Bip", "mode_silent" to "Senyap", "mode_off" to "Tutup",
             "next_prayer" to "Solat Seterusnya", "now" to "Sekarang", "todays_prayers" to "Waktu Solat Hari Ini"
         ),
         "ur" to mapOf(
-            "fajr" to "فجر", "sunrise" to "طلوع آفتاب", "dhuhr" to "ظہر", "asr" to "عصر", "maghrib" to "مغرب", "isha" to "عشاء",
+            "fajr" to "فجر", "sunrise" to "طلوع آفتاب", "dhuhr" to "ظہر", "asr" to "عصر", "maghrib" to "مغرب", "isha" to "عشاء", "qiyam" to "قیام الليل",
             "settings_notifications" to "اطلاعات کی ترجیحات", "mode_athan" to "اذان", "mode_beep" to "بیپ", "mode_silent" to "خاموش", "mode_off" to "بند",
             "next_prayer" to "اگلی نماز", "now" to "اب", "todays_prayers" to "آج کی نمازیں"
         ),
         "fa" to mapOf(
-            "fajr" to "فجر", "sunrise" to "طلوع آفتاب", "dhuhr" to "ظهر", "asr" to "عصر", "maghrib" to "مغرب", "isha" to "عشا",
+            "fajr" to "فجر", "sunrise" to "طلوع آفتاب", "dhuhr" to "ظهر", "asr" to "عصر", "maghrib" to "مغرب", "isha" to "عشا", "qiyam" to "قیام الیل",
             "settings_notifications" to "تنظیمات اعلان‌ها", "mode_athan" to "اذان", "mode_beep" to "بوق", "mode_silent" to "بی‌صدا", "mode_off" to "خاموش",
             "next_prayer" to "نماز بعدی", "now" to "اکنون", "todays_prayers" to "نمازهای امروز"
         ),
         "bn" to mapOf(
-            "fajr" to "ফজর", "sunrise" to "সূর্যোদয়", "dhuhr" to "যোহর", "asr" to "আসর", "maghrib" to "মাগরিব", "isha" to "এশা",
+            "fajr" to "ফজর", "sunrise" to "সূর্যোদয়", "dhuhr" to "যোহর", "asr" to "আসর", "maghrib" to "মাগরিব", "isha" to "এশা", "qiyam" to "কিয়ামুল লাইল",
             "settings_notifications" to "বিজ্ঞপ্তি সেটিংস", "mode_athan" to "আযান", "mode_beep" to "বীপ", "mode_silent" to "নীরব", "mode_off" to "বন্ধ",
             "next_prayer" to "পরবর্তী নামায", "now" to "এখন", "todays_prayers" to "আজকের নামাজ"
         ),
         "ru" to mapOf(
-            "fajr" to "Фаджр", "sunrise" to "Восход", "dhuhr" to "Зухр", "asr" to "Аср", "maghrib" to "Магриб", "isha" to "Иша",
+            "fajr" to "Фаджр", "sunrise" to "Восход", "dhuhr" to "Зухр", "asr" to "Аср", "maghrib" to "Магриб", "isha" to "Иша", "qiyam" to "Кийам (Тахаджуд)",
             "settings_notifications" to "Настройки уведомлений", "mode_athan" to "Азан", "mode_beep" to "Звуковой сигнал", "mode_silent" to "Без звука", "mode_off" to "Выкл",
             "next_prayer" to "Следующая молитва", "now" to "Сейчас", "todays_prayers" to "Молитвы на сегодня"
         ),
         "hi" to mapOf(
-            "fajr" to "फज्र", "sunrise" to "सूर्योदय", "dhuhr" to "जुह्र", "asr" to "अस्र", "maghrib" to "मगरिब", "isha" to "इशा",
+            "fajr" to "फज्र", "sunrise" to "सूर्योदय", "dhuhr" to "जुह्र", "asr" to "अस्र", "maghrib" to "मगरिब", "isha" to "इशा", "qiyam" to "क़ियाम (तहज्जुद)",
             "settings_notifications" to "अधिसूचना प्राथमिकताएं", "mode_athan" to "अज़ान", "mode_beep" to "बीप", "mode_silent" to "मौन", "mode_off" to "बंद",
             "next_prayer" to "अगली प्रार्थना", "now" to "अभी", "todays_prayers" to "आज की नमाज़ें"
         ),
         "zh" to mapOf(
-            "fajr" to "晨礼", "sunrise" to "日出", "dhuhr" to "晌礼", "asr" to "晡礼", "maghrib" to "昏礼", "isha" to "宵礼",
+            "fajr" to "晨礼", "sunrise" to "日出", "dhuhr" to "晌礼", "asr" to "晡礼", "maghrib" to "昏礼", "isha" to "宵礼", "qiyam" to "夜间立礼",
             "settings_notifications" to "通知设置", "mode_athan" to "阿赞", "mode_beep" to "提示音", "mode_silent" to "静音", "mode_off" to "关闭",
             "next_prayer" to "下一次礼拜", "now" to "当前", "todays_prayers" to "今日礼拜时间"
         ),
         "it" to mapOf(
-            "fajr" to "Fajr", "sunrise" to "Alba", "dhuhr" to "Dhuhr", "asr" to "Asr", "maghrib" to "Maghrib", "isha" to "Isha",
+            "fajr" to "Fajr", "sunrise" to "Alba", "dhuhr" to "Dhuhr", "asr" to "Asr", "maghrib" to "Maghrib", "isha" to "Isha", "qiyam" to "Qiyam (Tahajjud)",
             "settings_notifications" to "Preferenze Notifiche", "mode_athan" to "Adhan", "mode_beep" to "Bip", "mode_silent" to "Silenzioso", "mode_off" to "Disattivato",
             "next_prayer" to "Prossima Preghiera", "now" to "Ora", "todays_prayers" to "Preghiere di Oggi"
         ),
         "pt" to mapOf(
-            "fajr" to "Fajr", "sunrise" to "Nascer do sol", "dhuhr" to "Dhuhr", "asr" to "Asr", "maghrib" to "Maghrib", "isha" to "Isha",
+            "fajr" to "Fajr", "sunrise" to "Nascer do sol", "dhuhr" to "Dhuhr", "asr" to "Asr", "maghrib" to "Maghrib", "isha" to "Isha", "qiyam" to "Qiyam (Tahajjud)",
             "settings_notifications" to "Preferências de Notificação", "mode_athan" to "Adhan", "mode_beep" to "Bip", "mode_silent" to "Silencioso", "mode_off" to "Desativado",
             "next_prayer" to "Próxima Oração", "now" to "Agora", "todays_prayers" to "Orações de Hoje"
         ),
         "ja" to mapOf(
-            "fajr" to "ファジュル", "sunrise" to "日の出", "dhuhr" to "ズフル", "asr" to "アスル", "maghrib" to "マグリブ", "isha" to "イシャー",
+            "fajr" to "ファジュル", "sunrise" to "日の出", "dhuhr" to "ズフル", "asr" to "アスル", "maghrib" to "マグリブ", "isha" to "イシャー", "qiyam" to "キヤム",
             "settings_notifications" to "通知設定", "mode_athan" to "アザーン", "mode_beep" to "ビープ音", "mode_silent" to "サイレント", "mode_off" to "オフ",
             "next_prayer" to "次の礼拝", "now" to "現在", "todays_prayers" to "今日の礼拝時間"
         ),
         "ko" to mapOf(
-            "fajr" to "파즈르", "sunrise" to "일출", "dhuhr" to "두흐르", "asr" to "아스르", "maghrib" to "마그립", "isha" to "이샤",
+            "fajr" to "파즈르", "sunrise" to "일출", "dhuhr" to "두흐르", "asr" to "아스르", "maghrib" to "마그립", "isha" to "이샤", "qiyam" to "키얌 (타하주드)",
             "settings_notifications" to "알림 설정", "mode_athan" to "아잔", "mode_beep" to "비프음", "mode_silent" to "무음", "mode_off" to "꺼짐",
             "next_prayer" to "다음 예배", "now" to "현재", "todays_prayers" to "오늘의 예배 시간"
         ),
         "sw" to mapOf(
-            "fajr" to "Aljiri", "sunrise" to "Macheo", "dhuhr" to "Adhuhuri", "asr" to "Alasiri", "maghrib" to "Magharibi", "isha" to "Isha",
+            "fajr" to "Aljiri", "sunrise" to "Macheo", "dhuhr" to "Adhuhuri", "asr" to "Alasiri", "maghrib" to "Magharibi", "isha" to "Isha", "qiyam" to "Qiyam (Tahajjud)",
             "settings_notifications" to "Mipangilio ya Arifa", "mode_athan" to "Adhana", "mode_beep" to "Bibi", "mode_silent" to "Kimya", "mode_off" to "Zima",
             "next_prayer" to "Sala Inayofuata", "now" to "Sasa", "todays_prayers" to "Sala za Leo"
         ),
         "ha" to mapOf(
-            "fajr" to "Asuba", "sunrise" to "Hantsi", "dhuhr" to "Rana", "asr" to "La'asar", "maghrib" to "Almagurub", "isha" to "Lisha",
+            "fajr" to "Asuba", "sunrise" to "Hantsi", "dhuhr" to "Rana", "asr" to "La'asar", "maghrib" to "Almagurub", "isha" to "Lisha", "qiyam" to "Tahajjud",
             "settings_notifications" to "Zaɓin Sanarwa", "mode_athan" to "Kiran Salla", "mode_beep" to "Ƙara", "mode_silent" to "Shiru", "mode_off" to "Kashe",
             "next_prayer" to "Sallah Ta Gaba", "now" to "Yanzu", "todays_prayers" to "Sallolin Yau"
         )
@@ -364,6 +374,38 @@ object LanguageManager {
     fun isRtl(): Boolean {
         val lang = _currentLang.value
         return lang == "ar" || lang == "ur" || lang == "fa"
+    }
+
+    fun localizeNumerals(text: String): String {
+        if (_currentLang.value != "ar") return text
+        return text.map { char ->
+            when (char) {
+                '0' -> '٠'
+                '1' -> '١'
+                '2' -> '٢'
+                '3' -> '٣'
+                '4' -> '٤'
+                '5' -> '٥'
+                '6' -> '٦'
+                '7' -> '٧'
+                '8' -> '٨'
+                '9' -> '٩'
+                else -> char
+            }
+        }.joinToString("")
+    }
+
+    fun formatDisplayTime(timeStr: String): String {
+        var result = timeStr
+        if (_currentLang.value == "ar") {
+            result = result
+                .replace("AM", "ص")
+                .replace("PM", "م")
+                .replace("am", "ص")
+                .replace("pm", "م")
+            return localizeNumerals(result)
+        }
+        return result
     }
 }
 

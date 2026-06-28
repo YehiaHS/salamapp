@@ -56,29 +56,33 @@ fun DuasScreen() {
     var expandedIndex by remember { mutableStateOf(-1) }
 
     SalamScreenScaffold {
-        // Screen title
-        Text(
-            text = "Supplications & Adhkar",
-            style = MaterialTheme.typography.headlineMedium.copy(
-                color = palette.textPrimary,
-                fontWeight = FontWeight.ExtraBold
-            ),
-            modifier = Modifier.padding(bottom = SalamSpacing.cardGap)
-        )
-
-        Text(
-            text = "${categories.size} categories",
-            style = MaterialTheme.typography.labelMedium.copy(
-                color = palette.textMuted
-            ),
-            modifier = Modifier.padding(bottom = SalamSpacing.sectionGap)
-        )
-
         Box(modifier = Modifier.fillMaxSize()) {
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(SalamSpacing.cardGap),
                 modifier = Modifier.fillMaxSize()
             ) {
+                item {
+                    Column(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "Supplications & Adhkar",
+                            style = MaterialTheme.typography.headlineMedium.copy(
+                                color = palette.textPrimary,
+                                fontWeight = FontWeight.ExtraBold
+                            ),
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
+
+                        Text(
+                            text = "${categories.size} categories",
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                color = palette.textMuted
+                            )
+                        )
+                    }
+                }
+
                 itemsIndexed(categories, key = { _, category -> category.name }) { index, category ->
                     val isExpanded = expandedIndex == index
                     CategoryDuaRow(

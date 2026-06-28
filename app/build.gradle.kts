@@ -74,6 +74,7 @@ dependencies {
     
     // Location services for auto prayer calculation
     implementation("com.google.android.gms:play-services-location:21.2.0")
+    implementation("org.osmdroid:osmdroid-android:6.1.18")
     
     // Adhan Library
     implementation("com.batoulapps.adhan:adhan:1.2.1")

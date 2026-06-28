@@ -15,6 +15,12 @@ import com.yehia.prayertimes.data.PrayerType
 import com.yehia.prayertimes.receiver.PrayerNotificationReceiver
 import java.util.Calendar
 import java.util.Date
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import java.io.File
+import java.io.FileOutputStream
+import java.net.URL
 
 object NotificationHelper {
 
@@ -110,6 +116,9 @@ object NotificationHelper {
         val mode = sharedPref.getString("mode_${prayerType.name}", null)
         if (mode != null) return mode
 
+        if (prayerType == PrayerType.SUNRISE) return "OFF"
+        if (prayerType == PrayerType.QIYAM) return "OFF"
+
         // Backward compatibility fallback logic
         val isEnabled = getNotificationPreference(context, prayerType)
         if (!isEnabled) return "OFF"
@@ -120,6 +129,67 @@ object NotificationHelper {
     fun savePrayerNotificationMode(context: Context, prayerType: PrayerType, mode: String) {
         val sharedPref = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         sharedPref.edit().putString("mode_${prayerType.name}", mode).apply()
+    }
+
+    fun getPrePrayerOffset(context: Context, prayerType: PrayerType): Int {
+        val sharedPref = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return sharedPref.getInt("pre_offset_${prayerType.name}", 0) // 0 = None
+    }
+
+    fun savePrePrayerOffset(context: Context, prayerType: PrayerType, offsetMinutes: Int) {
+        val sharedPref = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        sharedPref.edit().putInt("pre_offset_${prayerType.name}", offsetMinutes).apply()
+    }
+
+    fun getIqamahOffset(context: Context, prayerType: PrayerType): Int {
+        val sharedPref = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return sharedPref.getInt("iqamah_offset_${prayerType.name}", 0) // 0 = None
+    }
+
+    fun saveIqamahOffset(context: Context, prayerType: PrayerType, offsetMinutes: Int) {
+        val sharedPref = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        sharedPref.edit().putInt("iqamah_offset_${prayerType.name}", offsetMinutes).apply()
+    }
+
+    fun getSavedMuezzin(context: Context): String {
+        val sharedPref = context.getSharedPreferences("salam_prefs", Context.MODE_PRIVATE)
+        return sharedPref.getString("athan_muezzin", "mishary") ?: "mishary"
+    }
+
+    fun downloadAthanFile(context: Context, muezzinKey: String) {
+        val urlMap = mapOf(
+            "mishary" to "https://www.islamcan.com/audio/adhan/azan2.mp3",
+            "makkah" to "https://www.islamcan.com/audio/adhan/azan16.mp3",
+            "madinah" to "https://www.islamcan.com/audio/adhan/azan20.mp3"
+        )
+        val urlStr = urlMap[muezzinKey] ?: return
+        val destinationFile = File(context.filesDir, "athan_$muezzinKey.mp3")
+
+        if (destinationFile.exists() && destinationFile.length() > 100000L) {
+            Log.d(TAG, "Athan file for $muezzinKey already exists")
+            return
+        }
+
+        GlobalScope.launch(Dispatchers.IO) {
+            try {
+                Log.d(TAG, "Starting background download for muezzin $muezzinKey from $urlStr")
+                val url = URL(urlStr)
+                val connection = url.openConnection()
+                connection.connectTimeout = 15000
+                connection.readTimeout = 15000
+                connection.inputStream.use { input ->
+                    FileOutputStream(destinationFile).use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                Log.d(TAG, "Downloaded athan_$muezzinKey.mp3 successfully: ${destinationFile.length()} bytes")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error downloading Athan file for $muezzinKey", e)
+                if (destinationFile.exists()) {
+                    destinationFile.delete()
+                }
+            }
+        }
     }
 
     fun schedulePrayerAlarms(context: Context) {
@@ -138,81 +208,174 @@ object NotificationHelper {
 
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
-        // We only care about 5 prayers: Fajr, Dhuhr, Asr, Maghrib, Isha
         val targetPrayers = listOf(
             PrayerType.FAJR,
+            PrayerType.SUNRISE,
             PrayerType.DHUHR,
             PrayerType.ASR,
             PrayerType.MAGHRIB,
-            PrayerType.ISHA
+            PrayerType.ISHA,
+            PrayerType.QIYAM
         )
 
+        // Trigger background download of chosen Athan file if needed
+        downloadAthanFile(context, getSavedMuezzin(context))
+
         for (prayerType in targetPrayers) {
-            // Find today's prayer time
             val todayItem = todayResult.items.find { it.type == prayerType }
             val tomorrowItem = tomorrowResult.items.find { it.type == prayerType }
 
             if (todayItem == null || tomorrowItem == null) continue
 
-            // Determine if "today's" prayer has already passed
-            val targetTime = if (todayItem.time.after(now)) {
-                todayItem.time
-            } else {
-                tomorrowItem.time
-            }
+            val mode = getPrayerNotificationMode(context, prayerType)
 
-            val targetItem = if (todayItem.time.after(now)) todayItem else tomorrowItem
+            // 1. STANDARD ADHAN ALARM
+            val standardTargetTime = if (todayItem.time.after(now)) todayItem.time else tomorrowItem.time
+            val standardTargetItem = if (todayItem.time.after(now)) todayItem else tomorrowItem
 
-            // Unique Request Code for each prayer type (use its ordinal)
-            val requestCode = prayerType.ordinal
-
-            val intent = Intent(context, PrayerNotificationReceiver::class.java).apply {
-                putExtra("PRAYER_NAME", targetItem.name)
-                putExtra("PRAYER_TIME", targetItem.formattedTime)
-                putExtra("PRAYER_TYPE", prayerType.name)
-            }
-
-            val pendingIntent = PendingIntent.getBroadcast(
-                context,
-                requestCode,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-
-            // Cancel any existing alarm of this type
-            alarmManager.cancel(pendingIntent)
-
-            // Schedule the alarm precisely
-            val triggerTime = targetTime.time
-
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    if (alarmManager.canScheduleExactAlarms()) {
-                        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
-                        Log.d(TAG, "Scheduled EXACT alarm for ${targetItem.name} at ${targetItem.formattedTime}")
-                    } else {
-                        alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
-                        Log.d(TAG, "Scheduled INEXACT alarm for ${targetItem.name} at ${targetItem.formattedTime} due to missing exact alarm permissions")
-                    }
-                } else {
-                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
-                    Log.d(TAG, "Scheduled EXACT alarm for ${targetItem.name} at ${targetItem.formattedTime}")
+            if (mode != "OFF") {
+                val intent = Intent(context, PrayerNotificationReceiver::class.java).apply {
+                    putExtra("PRAYER_NAME", standardTargetItem.name)
+                    putExtra("PRAYER_TIME", standardTargetItem.formattedTime)
+                    putExtra("PRAYER_TYPE", prayerType.name)
+                    putExtra("ALERT_TYPE", "STANDARD")
                 }
-            } catch (e: SecurityException) {
-                // Graceful fallback
-                alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
-                Log.e(TAG, "SecurityException while scheduling exact alarm: fallback used", e)
+
+                val requestCode = 100 + prayerType.ordinal
+                val pendingIntent = PendingIntent.getBroadcast(
+                    context,
+                    requestCode,
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+
+                alarmManager.cancel(pendingIntent)
+                scheduleExactAlarmSafe(alarmManager, standardTargetTime.time, pendingIntent)
+                Log.d(TAG, "Scheduled STANDARD alarm for ${standardTargetItem.name} at ${standardTargetTime}")
+            } else {
+                val intent = Intent(context, PrayerNotificationReceiver::class.java)
+                val pendingIntent = PendingIntent.getBroadcast(
+                    context,
+                    100 + prayerType.ordinal,
+                    intent,
+                    PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+                )
+                if (pendingIntent != null) {
+                    alarmManager.cancel(pendingIntent)
+                }
+            }
+
+            // 2. PRE-PRAYER ALARM
+            val preOffset = getPrePrayerOffset(context, prayerType)
+            if (preOffset > 0 && mode != "OFF") {
+                val todayPreTime = todayItem.time.time - (preOffset * 60 * 1000L)
+                val targetPreTime = if (todayPreTime > now.time) {
+                    todayPreTime
+                } else {
+                    tomorrowItem.time.time - (preOffset * 60 * 1000L)
+                }
+                val targetItem = if (todayPreTime > now.time) todayItem else tomorrowItem
+
+                val intent = Intent(context, PrayerNotificationReceiver::class.java).apply {
+                    putExtra("PRAYER_NAME", targetItem.name)
+                    putExtra("PRAYER_TIME", targetItem.formattedTime)
+                    putExtra("PRAYER_TYPE", prayerType.name)
+                    putExtra("ALERT_TYPE", "PRE_PRAYER")
+                    putExtra("OFFSET_MINUTES", preOffset)
+                }
+
+                val requestCode = 200 + prayerType.ordinal
+                val pendingIntent = PendingIntent.getBroadcast(
+                    context,
+                    requestCode,
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+
+                alarmManager.cancel(pendingIntent)
+                scheduleExactAlarmSafe(alarmManager, targetPreTime, pendingIntent)
+                Log.d(TAG, "Scheduled PRE_PRAYER alarm for ${targetItem.name} at ${Date(targetPreTime)} ($preOffset mins early)")
+            } else {
+                val intent = Intent(context, PrayerNotificationReceiver::class.java)
+                val pendingIntent = PendingIntent.getBroadcast(
+                    context,
+                    200 + prayerType.ordinal,
+                    intent,
+                    PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+                )
+                if (pendingIntent != null) {
+                    alarmManager.cancel(pendingIntent)
+                }
+            }
+
+            // 3. IQAMAH ALARM
+            val iqamahOffset = getIqamahOffset(context, prayerType)
+            if (iqamahOffset > 0 && mode != "OFF") {
+                val todayIqamahTime = todayItem.time.time + (iqamahOffset * 60 * 1000L)
+                val targetIqamahTime = if (todayIqamahTime > now.time) {
+                    todayIqamahTime
+                } else {
+                    tomorrowItem.time.time + (iqamahOffset * 60 * 1000L)
+                }
+                val targetItem = if (todayIqamahTime > now.time) todayItem else tomorrowItem
+
+                val intent = Intent(context, PrayerNotificationReceiver::class.java).apply {
+                    putExtra("PRAYER_NAME", targetItem.name)
+                    putExtra("PRAYER_TIME", targetItem.formattedTime)
+                    putExtra("PRAYER_TYPE", prayerType.name)
+                    putExtra("ALERT_TYPE", "IQAMAH")
+                    putExtra("OFFSET_MINUTES", iqamahOffset)
+                }
+
+                val requestCode = 300 + prayerType.ordinal
+                val pendingIntent = PendingIntent.getBroadcast(
+                    context,
+                    requestCode,
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+
+                alarmManager.cancel(pendingIntent)
+                scheduleExactAlarmSafe(alarmManager, targetIqamahTime, pendingIntent)
+                Log.d(TAG, "Scheduled IQAMAH alarm for ${targetItem.name} at ${Date(targetIqamahTime)} ($iqamahOffset mins after)")
+            } else {
+                val intent = Intent(context, PrayerNotificationReceiver::class.java)
+                val pendingIntent = PendingIntent.getBroadcast(
+                    context,
+                    300 + prayerType.ordinal,
+                    intent,
+                    PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+                )
+                if (pendingIntent != null) {
+                    alarmManager.cancel(pendingIntent)
+                }
             }
         }
-        // Update home screen widget
         com.yehia.prayertimes.widget.PrayerWidgetProvider.triggerUpdate(context)
     }
 
+    private fun scheduleExactAlarmSafe(alarmManager: AlarmManager, triggerTime: Long, pendingIntent: PendingIntent) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (alarmManager.canScheduleExactAlarms()) {
+                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
+                } else {
+                    alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
+                }
+            } else {
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
+            }
+        } catch (e: SecurityException) {
+            alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
+            Log.e(TAG, "SecurityException while scheduling exact alarm: fallback used", e)
+        }
+    }
 
     fun cancelAlarms(context: Context) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val targetPrayers = listOf(
             PrayerType.FAJR,
+            PrayerType.SUNRISE,
             PrayerType.DHUHR,
             PrayerType.ASR,
             PrayerType.MAGHRIB,
@@ -221,15 +384,35 @@ object NotificationHelper {
 
         for (prayerType in targetPrayers) {
             val intent = Intent(context, PrayerNotificationReceiver::class.java)
-            val pendingIntent = PendingIntent.getBroadcast(
+            // Cancel Standard (100)
+            var pendingIntent = PendingIntent.getBroadcast(
                 context,
-                prayerType.ordinal,
+                100 + prayerType.ordinal,
                 intent,
                 PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
             )
             if (pendingIntent != null) {
                 alarmManager.cancel(pendingIntent)
-                Log.d(TAG, "Cancelled alarm for ${prayerType.name}")
+            }
+            // Cancel Pre-Prayer (200)
+            pendingIntent = PendingIntent.getBroadcast(
+                context,
+                200 + prayerType.ordinal,
+                intent,
+                PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+            )
+            if (pendingIntent != null) {
+                alarmManager.cancel(pendingIntent)
+            }
+            // Cancel Iqamah (300)
+            pendingIntent = PendingIntent.getBroadcast(
+                context,
+                300 + prayerType.ordinal,
+                intent,
+                PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+            )
+            if (pendingIntent != null) {
+                alarmManager.cancel(pendingIntent)
             }
         }
     }

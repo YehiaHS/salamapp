@@ -9,12 +9,14 @@ import androidx.compose.ui.graphics.toArgb
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 object ThemeManager {
 
     private const val PREFS_NAME = "prayer_times_prefs"
     private const val KEY_THEME = "selected_theme"
     private const val KEY_AMOLED = "amoled_pure_black"
+    private const val KEY_GRADIENTS = "enable_background_gradients"
     
     private const val KEY_CUSTOM_PRIMARY = "custom_primary"
     private const val KEY_CUSTOM_ACCENT = "custom_accent"
@@ -43,17 +45,29 @@ object ThemeManager {
         isLight = false
     )
 
-    private val _currentTheme = MutableStateFlow(AppTheme.SALAM_TWILIGHT)
+    private val _currentTheme = MutableStateFlow(AppTheme.TIME_OF_DAY)
     val currentTheme: StateFlow<AppTheme> = _currentTheme.asStateFlow()
 
     private val _customPalette = MutableStateFlow(defaultCustomPalette)
     val customPalette: StateFlow<ThemePalette> = _customPalette.asStateFlow()
 
-    private val _currentPalette = MutableStateFlow(AppTheme.SALAM_TWILIGHT.getPalette())
+    private val _currentPalette = MutableStateFlow(AppTheme.TIME_OF_DAY.getPalette())
     val currentPalette: StateFlow<ThemePalette> = _currentPalette.asStateFlow()
+
+    /** Increments every minute when TIME_OF_DAY is active to force recomposition. */
+    private val _timeOfDayTick = MutableStateFlow(0)
+    val timeOfDayTick: StateFlow<Int> = _timeOfDayTick.asStateFlow()
+
+    private var timeTickJob: kotlinx.coroutines.Job? = null
+    private val scope = kotlinx.coroutines.CoroutineScope(
+        kotlinx.coroutines.Dispatchers.Main + kotlinx.coroutines.SupervisorJob()
+    )
 
     private var _amoledModeEnabled = false
     val amoledModeEnabled: Boolean get() = _amoledModeEnabled
+
+    private val _gradientsEnabled = MutableStateFlow(false)
+    val gradientsEnabled: StateFlow<Boolean> = _gradientsEnabled.asStateFlow()
 
     fun getPalette(theme: AppTheme): ThemePalette = theme.getPalette()
 
@@ -64,6 +78,11 @@ object ThemeManager {
 
     fun setTheme(context: Context, theme: AppTheme) {
         _currentTheme.value = theme
+        if (theme == AppTheme.TIME_OF_DAY) {
+            startTimeOfDayTick(context)
+        } else {
+            stopTimeOfDayTick()
+        }
         updateActivePalette(context)
     }
 
@@ -76,14 +95,29 @@ object ThemeManager {
         updateActivePalette(context)
     }
 
+    fun setGradientsEnabled(context: Context, enabled: Boolean) {
+        _gradientsEnabled.value = enabled
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(KEY_GRADIENTS, enabled)
+            .apply()
+    }
+
+    private val _targetTimeZone = MutableStateFlow<java.util.TimeZone>(java.util.TimeZone.getDefault())
+    val targetTimeZone: StateFlow<java.util.TimeZone> = _targetTimeZone.asStateFlow()
+
+    fun updateTargetTimeZone(context: Context, tz: java.util.TimeZone) {
+        _targetTimeZone.value = tz
+        updateActivePalette(context)
+    }
+
     fun updateActivePalette(context: Context) {
         val theme = _currentTheme.value
-        val basePalette = if (theme == AppTheme.DYNAMIC) {
-            getDynamicPalette(context)
-        } else if (theme == AppTheme.CUSTOM) {
-            _customPalette.value
-        } else {
-            theme.getPalette()
+        val basePalette = when {
+            theme == AppTheme.TIME_OF_DAY -> TimeOfDayTheme.getPaletteForTimeZone(_targetTimeZone.value)
+            theme == AppTheme.DYNAMIC     -> getDynamicPalette(context)
+            theme == AppTheme.CUSTOM      -> _customPalette.value
+            else                          -> theme.getPalette()
         }
 
         _currentPalette.value = if (_amoledModeEnabled && !basePalette.isLight) {
@@ -98,6 +132,27 @@ object ThemeManager {
         } else {
             basePalette
         }
+    }
+
+    private fun startTimeOfDayTick(context: Context) {
+        timeTickJob?.cancel()
+        timeTickJob = scope.launch {
+            while (true) {
+                // Wait until the next minute boundary in the target location's calendar if possible, or system default
+                val cal = java.util.Calendar.getInstance(_targetTimeZone.value)
+                val secondsUntilNextMinute = 60 - cal.get(java.util.Calendar.SECOND)
+                kotlinx.coroutines.delay(secondsUntilNextMinute * 1000L)
+                if (_currentTheme.value == AppTheme.TIME_OF_DAY) {
+                    _timeOfDayTick.value++
+                    updateActivePalette(context)
+                }
+            }
+        }
+    }
+
+    private fun stopTimeOfDayTick() {
+        timeTickJob?.cancel()
+        timeTickJob = null
     }
 
     fun getDynamicPalette(context: Context): ThemePalette {
@@ -170,12 +225,13 @@ object ThemeManager {
     fun loadTheme(context: Context) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         _amoledModeEnabled = prefs.getBoolean(KEY_AMOLED, false)
+        _gradientsEnabled.value = prefs.getBoolean(KEY_GRADIENTS, false)
         loadCustomPalette(context)
-        val themeName = prefs.getString(KEY_THEME, AppTheme.SALAM_TWILIGHT.name) ?: AppTheme.SALAM_TWILIGHT.name
+        val themeName = prefs.getString(KEY_THEME, AppTheme.TIME_OF_DAY.name) ?: AppTheme.TIME_OF_DAY.name
         val theme = try {
             AppTheme.valueOf(themeName)
         } catch (_: IllegalArgumentException) {
-            AppTheme.SALAM_TWILIGHT
+            AppTheme.TIME_OF_DAY
         }
         setTheme(context, theme)
     }

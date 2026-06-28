@@ -57,6 +57,9 @@ class QuranViewModel(application: Application) : AndroidViewModel(application) {
     private val _readerFontSize = MutableStateFlow(22f)
     val readerFontSize: StateFlow<Float> = _readerFontSize.asStateFlow()
 
+    private val _readerFont = MutableStateFlow("uthmani")
+    val readerFont: StateFlow<String> = _readerFont.asStateFlow()
+
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
@@ -96,6 +99,7 @@ class QuranViewModel(application: Application) : AndroidViewModel(application) {
         }
         loadBookmark()
         loadReaderFontSize()
+        loadReaderFont()
     }
 
     val filteredSurahs: StateFlow<List<Surah>> = combine(_surahs, _searchQuery) { list, query ->
@@ -169,6 +173,17 @@ class QuranViewModel(application: Application) : AndroidViewModel(application) {
     private fun loadReaderFontSize() {
         val sharedPref = getApplication<Application>().getSharedPreferences("quran_prefs", Context.MODE_PRIVATE)
         _readerFontSize.value = sharedPref.getFloat("reader_font_size", 24f)
+    }
+
+    fun updateFont(newFont: String) {
+        _readerFont.value = newFont
+        val sharedPref = getApplication<Application>().getSharedPreferences("quran_prefs", Context.MODE_PRIVATE)
+        sharedPref.edit().putString("reader_font", newFont).apply()
+    }
+
+    private fun loadReaderFont() {
+        val sharedPref = getApplication<Application>().getSharedPreferences("quran_prefs", Context.MODE_PRIVATE)
+        _readerFont.value = sharedPref.getString("reader_font", "uthmani") ?: "uthmani"
     }
 
     fun loadTranslations(context: Context, surahNumber: Int, lang: String) {

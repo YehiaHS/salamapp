@@ -92,13 +92,16 @@ fun PrayerTimesTheme(
     }
 
     val layoutDirection = if (LanguageManager.isRtl()) LayoutDirection.Rtl else LayoutDirection.Ltr
+    val adaptiveScale = rememberAdaptiveScale()
+    val typography = adaptedTypography()
     CompositionLocalProvider(
         LocalLayoutDirection provides layoutDirection,
-        LocalThemePalette provides palette
+        LocalThemePalette provides palette,
+        LocalAdaptiveScale provides adaptiveScale
     ) {
         MaterialTheme(
             colorScheme = colorScheme,
-            typography = Typography,
+            typography = typography,
             content = content
         )
     }

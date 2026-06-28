@@ -10,9 +10,8 @@ class BootReceiver : BroadcastReceiver() {
     private val TAG = "BootReceiver"
 
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
-            Log.d(TAG, "Device booted. Rescheduling prayer alarms.")
-            NotificationHelper.schedulePrayerAlarms(context)
-        }
+        val action = intent.action
+        Log.d(TAG, "Received broadcast action: $action. Rescheduling prayer alarms.")
+        NotificationHelper.schedulePrayerAlarms(context)
     }
 }

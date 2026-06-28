@@ -69,6 +69,10 @@ import com.yehia.prayertimes.utils.LanguageManager
 import com.yehia.prayertimes.ui.theme.readingThemes
 import com.yehia.prayertimes.ui.viewmodel.QuranViewModel
 import com.yehia.prayertimes.ui.theme.salamClickable
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
+import com.yehia.prayertimes.ui.theme.AmiriFontFamily
+import com.yehia.prayertimes.ui.theme.UthmanicFontFamily
 import kotlinx.coroutines.launch
 
 private data class QuranReciter(
@@ -101,6 +105,11 @@ fun QuranDetailScreen(
     val bookmarkSurah by viewModel.bookmarkSurah.collectAsState()
     val bookmarkAyah by viewModel.bookmarkAyah.collectAsState()
     val readerFontSize by viewModel.readerFontSize.collectAsState()
+    val readerFont by viewModel.readerFont.collectAsState()
+
+    val activeFontFamily = remember(readerFont) {
+        if (readerFont == "amiri") AmiriFontFamily else UthmanicFontFamily
+    }
 
     val context = LocalContext.current
     val currentLang by LanguageManager.currentLang
@@ -113,13 +122,24 @@ fun QuranDetailScreen(
     }
 
     val prefs = remember { context.getSharedPreferences("salam_prefs", Context.MODE_PRIVATE) }
-    var selectedPaperBg by remember { mutableStateOf(prefs.getString("quran_read_bg", "parchment") ?: "parchment") }
+    var selectedPaperBg by remember { mutableStateOf(prefs.getString("quran_read_bg", "app") ?: "app") }
     var readingMode by remember { mutableStateOf(prefs.getString("quran_reading_mode", "scroll") ?: "scroll") }
 
     // Reading Background Colors from ReadingTheme
-    val activeReadingTheme = remember(selectedPaperBg) {
-        val lookup = if (selectedPaperBg == "cream") "Cream" else selectedPaperBg
-        readingThemes.find { it.name.lowercase() == lookup.lowercase() } ?: readingThemes.first()
+    val activeReadingTheme = remember(selectedPaperBg, palette) {
+        if (selectedPaperBg == "app") {
+            com.yehia.prayertimes.ui.theme.ReadingTheme(
+                name = "App Theme",
+                background = palette.background,
+                textPrimary = palette.textPrimary,
+                textSecondary = palette.textSecondary,
+                accent = palette.accent,
+                surface = palette.cardElevation2
+            )
+        } else {
+            val lookup = if (selectedPaperBg == "cream") "Cream" else selectedPaperBg
+            readingThemes.find { it.name.lowercase() == lookup.lowercase() } ?: readingThemes.first()
+        }
     }
     val paperBgColor = activeReadingTheme.background
     val textPrimaryColor = activeReadingTheme.textPrimary
@@ -407,6 +427,45 @@ fun QuranDetailScreen(
                     HorizontalDivider(color = strokeColor.copy(alpha = 0.2f), thickness = 1.dp)
                     Spacer(modifier = Modifier.height(10.dp))
 
+                    // Font Family Preference
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Arabic Font Style",
+                            color = textPrimaryColor,
+                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            listOf("uthmani" to "Uthmani", "amiri" to "Amiri").forEach { (fontKey, label) ->
+                                val isSel = readerFont == fontKey
+                                Box(
+                                    modifier = Modifier
+                                        .clip(SalamShapes.cardSmall)
+                                        .background(if (isSel) palette.primary.copy(alpha = 0.2f) else strokeColor.copy(alpha = 0.15f))
+                                        .salamClickable {
+                                            viewModel.updateFont(fontKey)
+                                        }
+                                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                                ) {
+                                    Text(
+                                        label,
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (isSel) palette.primary else textSecondaryColor
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+                    HorizontalDivider(color = strokeColor.copy(alpha = 0.2f), thickness = 1.dp)
+                    Spacer(modifier = Modifier.height(10.dp))
+
                     // Reading Mode Preference
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -499,6 +558,7 @@ fun QuranDetailScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         listOf(
+                            "app" to "App Theme",
                             "parchment" to "Parchment",
                             "emerald" to "Emerald",
                             "night" to "Night",
@@ -685,39 +745,42 @@ fun QuranDetailScreen(
             }
 
             Column(modifier = Modifier.fillMaxSize()) {
-                HorizontalPager(
-                    state = pagerState,
-                    modifier = Modifier.weight(1f),
-                    pageSpacing = 14.dp,
-                    beyondBoundsPageCount = 1
-                ) { pageIndex ->
-                    val page = standardPages.getOrNull(pageIndex)
-                    if (page == null) {
-                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text("Loading Quran pages...", color = textSecondaryColor)
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier.weight(1f),
+                        pageSpacing = 14.dp,
+                        beyondBoundsPageCount = 1
+                    ) { pageIndex ->
+                        val page = standardPages.getOrNull(pageIndex)
+                        if (page == null) {
+                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Text("Loading Quran pages...", color = textSecondaryColor)
+                            }
+                        } else {
+                            QuranStandardPageView(
+                                page = page,
+                                activeSurahNumber = activeSurah.number,
+                                activePlayingAyahNumber = if (currentPlayingAyahIndex >= 0) currentPlayingAyahIndex + 1 else -1,
+                                bookmarkSurah = bookmarkSurah,
+                                bookmarkAyah = bookmarkAyah,
+                                fontSize = readerFontSize,
+                                fontFamily = activeFontFamily,
+                                palette = palette,
+                                cardBgColor = cardBgColor,
+                                strokeColor = strokeColor,
+                                textPrimaryColor = textPrimaryColor,
+                                textSecondaryColor = textSecondaryColor,
+                                onCopy = { pageAyah ->
+                                    val copyText = "\"${pageAyah.ayah.textArabic}\"\n\nTranslation: ${translatedAyahs[pageAyah.ayah.number] ?: pageAyah.ayah.textEnglish}\n\n[Surah ${pageAyah.surah.nameEnglish} (${pageAyah.surah.number}:${pageAyah.ayah.number})]"
+                                    clipboard.setText(AnnotatedString(copyText))
+                                },
+                                onBookmark = { pageAyah ->
+                                    viewModel.saveBookmark(pageAyah.surah.number, pageAyah.ayah.number)
+                                },
+                                translatedAyahs = translatedAyahs
+                            )
                         }
-                    } else {
-                        QuranStandardPageView(
-                            page = page,
-                            activeSurahNumber = activeSurah.number,
-                            activePlayingAyahNumber = if (currentPlayingAyahIndex >= 0) currentPlayingAyahIndex + 1 else -1,
-                            bookmarkSurah = bookmarkSurah,
-                            bookmarkAyah = bookmarkAyah,
-                            fontSize = readerFontSize,
-                            palette = palette,
-                            cardBgColor = cardBgColor,
-                            strokeColor = strokeColor,
-                            textPrimaryColor = textPrimaryColor,
-                            textSecondaryColor = textSecondaryColor,
-                            onCopy = { pageAyah ->
-                                val copyText = "\"${pageAyah.ayah.textArabic}\"\n\nTranslation: ${translatedAyahs[pageAyah.ayah.number] ?: pageAyah.ayah.textEnglish}\n\n[Surah ${pageAyah.surah.nameEnglish} (${pageAyah.surah.number}:${pageAyah.ayah.number})]"
-                                clipboard.setText(AnnotatedString(copyText))
-                            },
-                            onBookmark = { pageAyah ->
-                                viewModel.saveBookmark(pageAyah.surah.number, pageAyah.ayah.number)
-                            },
-                            translatedAyahs = translatedAyahs
-                        )
                     }
                 }
 
@@ -803,6 +866,7 @@ fun QuranDetailScreen(
                         ) {
                             Text(
                                 text = "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
+                                fontFamily = activeFontFamily,
                                 fontSize = 24.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = palette.primary,
@@ -821,6 +885,7 @@ fun QuranDetailScreen(
                         ayah = ayah,
                         surahNumber = activeSurah.number,
                         fontSize = readerFontSize,
+                        fontFamily = activeFontFamily,
                         isBookmarked = isBookmarked,
                         isReciting = isReciting,
                         palette = palette,
@@ -942,6 +1007,7 @@ private fun QuranStandardPageView(
     bookmarkSurah: Int,
     bookmarkAyah: Int,
     fontSize: Float,
+    fontFamily: androidx.compose.ui.text.font.FontFamily,
     palette: ThemePalette,
     cardBgColor: Color,
     strokeColor: Color,
@@ -1023,6 +1089,7 @@ private fun QuranStandardPageView(
                     if (surah.number != 9 && ayahs.firstOrNull()?.ayah?.number == 1) {
                         Text(
                             text = "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
+                            fontFamily = fontFamily,
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
                             color = palette.primary,
@@ -1054,10 +1121,11 @@ private fun QuranStandardPageView(
                     ClickableText(
                         text = annotatedString,
                         style = MaterialTheme.typography.bodyMedium.copy(
+                            fontFamily = fontFamily,
                             fontSize = fontSize.sp,
                             fontWeight = FontWeight.Bold,
                             color = textPrimaryColor,
-                            textAlign = TextAlign.Center,
+                            textAlign = TextAlign.Justify,
                             textDirection = TextDirection.Rtl,
                             lineHeight = (fontSize * 1.8f).sp
                         ),
@@ -1079,78 +1147,81 @@ private fun QuranStandardPageView(
 
     selectedPageAyah?.let { pageAyah ->
         val isBookmarked = bookmarkSurah == pageAyah.surah.number && bookmarkAyah == pageAyah.ayah.number
-        AlertDialog(
-            onDismissRequest = { selectedPageAyah = null },
-            title = {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "${pageAyah.surah.nameEnglish} • Ayah ${pageAyah.ayah.number}",
-                        fontWeight = FontWeight.Bold,
-                        color = textPrimaryColor,
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    IconButton(
-                        onClick = {
-                            onBookmark(pageAyah)
-                        }
-                    ) {
-                        Icon(
-                            imageVector = if (isBookmarked) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
-                            contentDescription = "Bookmark",
-                            tint = if (isBookmarked) palette.primary else textSecondaryColor
-                        )
-                    }
-                }
-            },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(
-                        text = pageAyah.ayah.textArabic,
-                        fontSize = (fontSize - 2).coerceAtLeast(16f).sp,
-                        fontWeight = FontWeight.Bold,
-                        color = textPrimaryColor,
-                        textAlign = TextAlign.Right,
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            AlertDialog(
+                onDismissRequest = { selectedPageAyah = null },
+                title = {
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        style = LocalTextStyle.current.copy(
-                            textDirection = TextDirection.Rtl,
-                            lineHeight = (fontSize * 1.5f).sp
-                        )
-                    )
-                    Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(strokeColor.copy(alpha = 0.3f)))
-                    Text(
-                        text = translatedAyahs[pageAyah.ayah.number] ?: pageAyah.ayah.textEnglish,
-                        style = MaterialTheme.typography.bodyMedium.copy(color = textSecondaryColor),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            },
-            confirmButton = {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    TextButton(
-                        onClick = {
-                            onCopy(pageAyah)
-                        }
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.ContentCopy, contentDescription = "Copy", modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Copy", color = palette.primary)
+                        Text(
+                            text = "${pageAyah.surah.nameEnglish} • Ayah ${pageAyah.ayah.number}",
+                            fontWeight = FontWeight.Bold,
+                            color = textPrimaryColor,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        IconButton(
+                            onClick = {
+                                onBookmark(pageAyah)
+                            }
+                        ) {
+                            Icon(
+                                imageVector = if (isBookmarked) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
+                                contentDescription = "Bookmark",
+                                tint = if (isBookmarked) palette.primary else textSecondaryColor
+                            )
                         }
                     }
-                    TextButton(onClick = { selectedPageAyah = null }) {
-                        Text("Close", color = palette.primary)
+                },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text(
+                            text = pageAyah.ayah.textArabic,
+                            fontFamily = fontFamily,
+                            fontSize = (fontSize - 2).coerceAtLeast(16f).sp,
+                            fontWeight = FontWeight.Bold,
+                            color = textPrimaryColor,
+                            textAlign = TextAlign.Right,
+                            modifier = Modifier.fillMaxWidth(),
+                            style = LocalTextStyle.current.copy(
+                                textDirection = TextDirection.Rtl,
+                                lineHeight = (fontSize * 1.5f).sp
+                            )
+                        )
+                        Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(strokeColor.copy(alpha = 0.3f)))
+                        Text(
+                            text = translatedAyahs[pageAyah.ayah.number] ?: pageAyah.ayah.textEnglish,
+                            style = MaterialTheme.typography.bodyMedium.copy(color = textSecondaryColor),
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
-                }
-            },
-            containerColor = cardBgColor
-        )
+                },
+                confirmButton = {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TextButton(
+                            onClick = {
+                                onCopy(pageAyah)
+                            }
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.ContentCopy, contentDescription = "Copy", modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Copy", color = palette.primary)
+                            }
+                        }
+                        TextButton(onClick = { selectedPageAyah = null }) {
+                            Text("Close", color = palette.primary)
+                        }
+                    }
+                },
+                containerColor = cardBgColor
+            )
+        }
     }
 }
 
@@ -1159,6 +1230,7 @@ fun AyahCard(
     ayah: Ayah,
     surahNumber: Int,
     fontSize: Float,
+    fontFamily: androidx.compose.ui.text.font.FontFamily,
     isBookmarked: Boolean,
     isReciting: Boolean,
     palette: ThemePalette,
@@ -1259,6 +1331,7 @@ fun AyahCard(
             // Arabic Text (linked to custom font size)
             Text(
                 text = displayArabicText,
+                fontFamily = fontFamily,
                 fontSize = fontSize.sp,
                 fontWeight = FontWeight.Bold,
                 color = textPrimaryColor,

@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -43,14 +44,22 @@ import androidx.compose.material.icons.filled.NotificationsOff
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material.icons.filled.WbTwilight
 import androidx.compose.material.icons.filled.NightsStay
+import androidx.compose.animation.animateContentSize
+import androidx.compose.ui.draw.alpha
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -158,9 +167,22 @@ fun MainScreen(
         }
     }
 
+    val currentLang = LanguageManager.currentLang.value
+    val displayCityName = remember(cityName, currentLang) {
+        if (currentLang == "ar") {
+            cityName.replace("Egypt", "مصر")
+                .replace("Cairo", "القاهرة")
+                .replace("Giza", "الجيزة")
+                .replace("Alexandria", "الإسكندرية")
+        } else {
+            cityName
+        }
+    }
+
     // Today's Hijri Date
-    val todayHijri = remember { HijriCalendar.getTodayHijri() }
-    val hijriStr = remember(todayHijri) { HijriCalendar.formatHijriDate(todayHijri) }
+    val timeZone by viewModel.timeZone.collectAsState()
+    val todayHijri = remember(timeZone) { HijriCalendar.getTodayHijri(timeZone) }
+    val hijriStr = remember(todayHijri, currentLang) { HijriCalendar.formatHijriDate(todayHijri, currentLang) }
 
     // Smooth entry animation for bottom items
     val itemsAlpha = remember { Animatable(0f) }
@@ -177,152 +199,186 @@ fun MainScreen(
         showGeometricPattern = true,
         backgroundBrush = SolidColor(palette.background)
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            
-            Column(modifier = Modifier.fillMaxSize()) {
-                
-                // High fidelity sand-parchment top header row
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = SalamSpacing.elementGap),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Central Salam Branding aligned left
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(start = SalamSpacing.cardPaddingInner),
-                        horizontalAlignment = Alignment.Start
-                    ) {
-                        Text(
-                            text = "Assalamu Alaikum 👋",
-                            style = MaterialTheme.typography.labelMedium.copy(
-                                color = palette.textSecondary,
-                                fontWeight = FontWeight.Medium
-                            )
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = "Salam",
-                            style = MaterialTheme.typography.headlineLarge.copy(
-                                color = palette.textPrimary,
-                                fontWeight = FontWeight.ExtraBold,
-                                fontFamily = androidx.compose.ui.text.font.FontFamily.Serif
-                            )
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = "May peace be upon you",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                color = palette.textMuted
-                            )
-                        )
-                    }
+        uiState?.let { data ->
+            val currentActiveIndex = remember(data) {
+                data.items.indexOfFirst { it.type == data.currentPrayer?.type }
+            }
+            val primaryItems = remember(data.items) {
+                data.items.filter { it.type != PrayerType.SUNRISE && it.type != PrayerType.QIYAM }
+            }
 
-                    // Right Settings Badge
-                    Box(
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer(alpha = itemsAlpha.value),
+                verticalArrangement = Arrangement.spacedBy(SalamSpacing.cardGap)
+            ) {
+                item {
+                    Spacer(modifier = Modifier.height(SalamSpacing.elementGap))
+                }
+
+                // High fidelity sand-parchment top header row
+                item {
+                    Row(
                         modifier = Modifier
-                            .size(44.dp)
-                            .clip(CircleShape)
-                            .background(palette.surface, CircleShape)
-                            .salamClickable { onNavigateToSettings() }
-                            .padding(10.dp),
-                        contentAlignment = Alignment.Center
+                            .fillMaxWidth()
+                            .padding(bottom = SalamSpacing.elementGap),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Notifications,
-                            contentDescription = "Alert Settings",
-                            tint = palette.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
+                        // Central Salam Branding aligned left
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(start = SalamSpacing.cardPaddingInner),
+                            horizontalAlignment = Alignment.Start
+                        ) {
+                            Text(
+                                text = "${LanguageManager.get("greeting")} 👋",
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Start,
+                                style = MaterialTheme.typography.labelMedium.copy(
+                                    color = palette.textSecondary,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = LanguageManager.get("salam"),
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Start,
+                                style = MaterialTheme.typography.headlineLarge.copy(
+                                    color = palette.textPrimary,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontFamily = if (currentLang == "ar") androidx.compose.ui.text.font.FontFamily.Default else androidx.compose.ui.text.font.FontFamily.Serif
+                                ),
+                                maxLines = 1,
+                                softWrap = false
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = LanguageManager.get("may_peace"),
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Start,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    color = palette.textMuted
+                                ),
+                                maxLines = 1,
+                                softWrap = false
+                            )
+                        }
+
+                        // Right Settings Badge
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(CircleShape)
+                                .background(palette.surface, CircleShape)
+                                .salamClickable { onNavigateToSettings() }
+                                .padding(10.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Notifications,
+                                contentDescription = "Alert Settings",
+                                tint = palette.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                     }
                 }
 
                 // Hijri Date Banner
-                SalamCard(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = SalamSpacing.elementGap),
-                    elevation = 1,
-                    shape = SalamShapes.expressiveCorner1
-                ) {
-                    Row(
+                item {
+                    SalamCard(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = SalamSpacing.cardPaddingInner, vertical = SalamSpacing.elementGap),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(vertical = SalamSpacing.elementGap),
+                        elevation = 1,
+                        shape = SalamShapes.expressiveCorner1
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.CalendarMonth,
-                                contentDescription = "Hijri Calendar",
-                                tint = palette.primary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(SalamSpacing.elementGap))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = SalamSpacing.cardPaddingInner, vertical = SalamSpacing.elementGap),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.CalendarMonth,
+                                    contentDescription = "Hijri Calendar",
+                                    tint = palette.primary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(SalamSpacing.elementGap))
+                                Text(
+                                    text = LanguageManager.get("hijri_date"),
+                                    color = palette.textSecondary,
+                                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                                )
+                            }
                             Text(
-                                text = "Hijri Date",
-                                color = palette.textSecondary,
-                                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                                text = hijriStr,
+                                color = palette.primary,
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.ExtraBold)
                             )
                         }
-                        Text(
-                            text = hijriStr,
-                            color = palette.primary,
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.ExtraBold)
-                        )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(SalamSpacing.elementGap))
+                item {
+                    Spacer(modifier = Modifier.height(SalamSpacing.elementGap))
+                }
 
                 // Main Prayer Hero Card
-                uiState?.let { data ->
+                item {
                     ActivePrayerHero(
                         data = data,
                         countdownStrState = countdownStrState,
-                        cityName = cityName,
+                        cityName = displayCityName,
+                        timeZone = timeZone,
                         onLocationClick = { showLocationDialog = true }
                     )
                 }
 
-                Spacer(modifier = Modifier.height(SalamSpacing.sectionGap))
+                item {
+                    Spacer(modifier = Modifier.height(SalamSpacing.sectionGap))
+                }
 
                 // Scrollable Prayer Times list header
-                SalamSectionHeader(title = LanguageManager.get("todays_prayers"))
+                item {
+                    SalamSectionHeader(title = LanguageManager.get("todays_prayers"))
+                }
 
                 // Prayer times list with Worship Progress Checkmarks
-                uiState?.let { data ->
-                    val currentActiveIndex = remember(data) {
-                        data.items.indexOfFirst { it.type == data.currentPrayer?.type }
-                    }
+                itemsIndexed(primaryItems, key = { _, item -> item.type.name }) { index, item ->
+                    val isFajrWithSunriseActive = item.type == PrayerType.FAJR && data.currentPrayer?.type == PrayerType.SUNRISE
+                    val isIshaWithQiyamActive = item.type == PrayerType.ISHA && data.currentPrayer?.type == PrayerType.QIYAM
+                    val isActive = data.currentPrayer?.type == item.type || isFajrWithSunriseActive || isIshaWithQiyamActive
+                    
+                    val originalIndex = data.items.indexOfFirst { it.type == item.type }
+                    val isPast = currentActiveIndex >= 0 && originalIndex < currentActiveIndex
 
-                    LazyColumn(
-                        state = listState,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                            .graphicsLayer(alpha = itemsAlpha.value),
-                        verticalArrangement = Arrangement.spacedBy(SalamSpacing.cardGap)
-                    ) {
-                        itemsIndexed(data.items, key = { _, item -> item.type.name }) { index, item ->
-                            val isActive = data.currentPrayer?.type == item.type
-                            val isPast = currentActiveIndex >= 0 && index < currentActiveIndex
-                            
-                            PrayerTimeRow(
-                                item = item,
-                                isActive = isActive,
-                                isPast = isPast,
-                                index = index
-                            )
-                        }
-                        item {
-                            Spacer(modifier = Modifier.height(100.dp))
-                        }
+                    val nestedItem = when (item.type) {
+                        PrayerType.FAJR -> data.items.firstOrNull { it.type == PrayerType.SUNRISE }
+                        PrayerType.ISHA -> data.items.firstOrNull { it.type == PrayerType.QIYAM }
+                        else -> null
                     }
+                    
+                    PrayerTimeRow(
+                        item = item,
+                        isActive = isActive,
+                        isPast = isPast,
+                        index = index,
+                        nestedItem = nestedItem,
+                        currentActivePrayerType = data.currentPrayer?.type
+                    )
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(140.dp))
                 }
             }
         }
@@ -330,6 +386,7 @@ fun MainScreen(
 
     // Location & coordinates detail popup dialog
     if (showLocationDialog) {
+        val coroutineScope = rememberCoroutineScope()
         var isManualMode by remember {
             mutableStateOf(
                 context.getSharedPreferences("prayer_notification_prefs", Context.MODE_PRIVATE)
@@ -338,6 +395,9 @@ fun MainScreen(
         }
         var manualLatInput by remember { mutableStateOf(lat.toString()) }
         var manualLngInput by remember { mutableStateOf(lng.toString()) }
+        var searchQuery by remember { mutableStateOf("") }
+        var searchResults by remember { mutableStateOf<List<android.location.Address>>(emptyList()) }
+        var isSearching by remember { mutableStateOf(false) }
 
         AlertDialog(
             onDismissRequest = { showLocationDialog = false },
@@ -420,9 +480,94 @@ fun MainScreen(
                         }
                     } else {
                         Text(
-                            text = "Enter decimal coordinates manually to override current location.",
+                            text = "Search for a city name or enter decimal coordinates manually.",
                             style = MaterialTheme.typography.bodyMedium.copy(color = palette.textSecondary)
                         )
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            label = { Text("Search location (e.g. Cairo)", color = palette.textSecondary) },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            trailingIcon = {
+                                if (isSearching) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(20.dp),
+                                        color = palette.primary,
+                                        strokeWidth = 2.dp
+                                    )
+                                } else {
+                                    IconButton(
+                                        onClick = {
+                                            if (searchQuery.isNotBlank()) {
+                                                isSearching = true
+                                                coroutineScope.launch(Dispatchers.IO) {
+                                                    try {
+                                                        val geocoder = android.location.Geocoder(context, Locale.getDefault())
+                                                        @Suppress("DEPRECATION")
+                                                        val addresses = geocoder.getFromLocationName(searchQuery, 5)
+                                                        withContext(Dispatchers.Main) {
+                                                            if (addresses != null && addresses.isNotEmpty()) {
+                                                                searchResults = addresses
+                                                            } else {
+                                                                android.widget.Toast.makeText(context, "No locations found", android.widget.Toast.LENGTH_SHORT).show()
+                                                            }
+                                                            isSearching = false
+                                                        }
+                                                    } catch (e: Exception) {
+                                                        withContext(Dispatchers.Main) {
+                                                            android.widget.Toast.makeText(context, "Search failed: ${e.localizedMessage}", android.widget.Toast.LENGTH_SHORT).show()
+                                                            isSearching = false
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    ) {
+                                        Icon(Icons.Default.Search, contentDescription = "Search", tint = palette.primary)
+                                    }
+                                }
+                            }
+                        )
+
+                        if (searchResults.isNotEmpty()) {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(max = 120.dp),
+                                colors = CardDefaults.cardColors(containerColor = palette.surfaceVariant.copy(alpha = 0.5f))
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .verticalScroll(rememberScrollState())
+                                ) {
+                                    searchResults.forEach { address ->
+                                        val name = listOfNotNull(
+                                            address.locality ?: address.subAdminArea,
+                                            address.adminArea,
+                                            address.countryName
+                                        ).joinToString(", ")
+                                        
+                                        Text(
+                                            text = name.ifBlank { address.featureName ?: "Unknown Location" },
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable {
+                                                    manualLatInput = address.latitude.toString()
+                                                    manualLngInput = address.longitude.toString()
+                                                    searchResults = emptyList()
+                                                    searchQuery = name.ifBlank { address.featureName ?: "" }
+                                                }
+                                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                                            color = palette.textPrimary,
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
                         OutlinedTextField(
                             value = manualLatInput,
                             onValueChange = { manualLatInput = it },
@@ -483,6 +628,7 @@ fun ActivePrayerHero(
     data: PrayerCalculationResult,
     countdownStrState: State<String>,
     cityName: String,
+    timeZone: java.util.TimeZone,
     onLocationClick: () -> Unit
 ) {
     val palette by ThemeManager.currentPalette.collectAsState()
@@ -537,20 +683,34 @@ fun ActivePrayerHero(
                         
                         // Parse detailed time fields for precise ms calculation
                         val cal = Calendar.getInstance()
-                        val hr = cal.get(Calendar.HOUR_OF_DAY)
-                        val min = cal.get(Calendar.MINUTE)
-                        val sec = cal.get(Calendar.SECOND)
-                        val ms = cal.get(Calendar.MILLISECOND)
-                        
-                        val daySec = hr * 3600f + min * 60f + sec + (ms / 1000f)
-                        val isDaytime = daySec in 21600f..66600f // 06:00 to 18:30
-                        
+                        val currentTimeMs = cal.timeInMillis
+
+                        val sunriseItem = data.items.firstOrNull { it.type == PrayerType.SUNRISE }
+                        val maghribItem = data.items.firstOrNull { it.type == PrayerType.MAGHRIB }
+
+                        val sunriseMs = sunriseItem?.time?.time ?: (cal.clone() as Calendar).apply {
+                            set(Calendar.HOUR_OF_DAY, 6)
+                            set(Calendar.MINUTE, 0)
+                            set(Calendar.SECOND, 0)
+                            set(Calendar.MILLISECOND, 0)
+                        }.timeInMillis
+
+                        val maghribMs = maghribItem?.time?.time ?: (cal.clone() as Calendar).apply {
+                            set(Calendar.HOUR_OF_DAY, 18)
+                            set(Calendar.MINUTE, 30)
+                            set(Calendar.SECOND, 0)
+                            set(Calendar.MILLISECOND, 0)
+                        }.timeInMillis
+
+                        val isDaytime = currentTimeMs in sunriseMs..maghribMs
+
                         // Parabolic orbit calculation mapping across the entire card layout
                         val cx: Float
                         val cy: Float
-                        
+
                         if (isDaytime) {
-                            val progress = (daySec - 21600f) / 45000f // Daytime duration: 12.5 hrs = 45000s
+                            val duration = (maghribMs - sunriseMs).toFloat()
+                            val progress = ((currentTimeMs - sunriseMs).toFloat() / duration).coerceIn(0f, 1f)
                             cx = size.width * (0.08f + 0.84f * progress)
                             cy = size.height * (0.75f - 0.52f * kotlin.math.sin(progress * Math.PI).toFloat())
                             
@@ -571,9 +731,20 @@ fun ActivePrayerHero(
                                 center = Offset(cx, cy)
                             )
                         } else {
-                            // Nighttime duration: 11.5 hrs = 41400s
-                            val elapsed = if (daySec >= 66600f) daySec - 66600f else 19800f + daySec
-                            val progress = elapsed / 41400f
+                            val elapsed: Long
+                            val duration: Long
+                            if (currentTimeMs >= maghribMs) {
+                                // Tonight (from Maghrib to tomorrow's Sunrise)
+                                val tomorrowSunrise = sunriseMs + 24 * 3600 * 1000L
+                                elapsed = currentTimeMs - maghribMs
+                                duration = tomorrowSunrise - maghribMs
+                            } else {
+                                // Last night / early morning before sunrise
+                                val yesterdayMaghrib = maghribMs - 24 * 3600 * 1000L
+                                elapsed = currentTimeMs - yesterdayMaghrib
+                                duration = sunriseMs - yesterdayMaghrib
+                            }
+                            val progress = (elapsed.toFloat() / duration.toFloat()).coerceIn(0f, 1f)
                             cx = size.width * (0.08f + 0.84f * progress)
                             cy = size.height * (0.75f - 0.52f * kotlin.math.sin(progress * Math.PI).toFloat())
                             
@@ -594,7 +765,7 @@ fun ActivePrayerHero(
                             
                             // 2. Draw the dynamically calculated illuminated phase of the moon based on Hijri day
                             val hijriDay = try {
-                                com.yehia.prayertimes.utils.HijriCalendar.getTodayHijri().day
+                                com.yehia.prayertimes.utils.HijriCalendar.getTodayHijri(timeZone).day
                             } catch (e: Exception) {
                                 15 // Fallback to full moon
                             }
@@ -659,8 +830,10 @@ fun ActivePrayerHero(
                 ) {
                     Text(
                         text = LanguageManager.get("next_prayer").uppercase(),
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Start,
                         style = MaterialTheme.typography.labelMedium.copy(
-                            color = palette.accent,
+                            color = Color(0xFFE2D6FF), // Constant light lavender/violet
                             fontWeight = FontWeight.ExtraBold,
                             letterSpacing = 1.5.sp,
                             shadow = textShadow
@@ -669,22 +842,27 @@ fun ActivePrayerHero(
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = data.nextPrayer?.let { LanguageManager.get(it.type.name.lowercase()) } ?: LanguageManager.get("fajr"),
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Start,
                         style = MaterialTheme.typography.headlineLarge.copy(
-                            color = palette.textPrimary,
+                            color = Color.White, // Constant clean white text
                             fontWeight = FontWeight.Black,
-                            fontSize = 42.sp,
-                            fontFamily = androidx.compose.ui.text.font.FontFamily.Serif,
+                            fontSize = if (LanguageManager.currentLang.value == "ar") 28.sp else 42.sp,
+                            fontFamily = if (LanguageManager.currentLang.value == "ar") androidx.compose.ui.text.font.FontFamily.Default else androidx.compose.ui.text.font.FontFamily.Serif,
                             shadow = textShadow
-                        )
+                        ),
+                        maxLines = 1,
+                        softWrap = false
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     
                     CountdownText(
                         countdownStrState = countdownStrState,
+                        modifier = Modifier.fillMaxWidth(),
                         style = MaterialTheme.typography.displayMedium.copy(
                             fontWeight = FontWeight.Black,
-                            color = palette.textPrimary,
-                            fontSize = 54.sp,
+                            color = Color.White, // Constant clean white text
+                            fontSize = if (LanguageManager.currentLang.value == "ar") 38.sp else 54.sp,
                             shadow = textShadow
                         )
                     )
@@ -692,11 +870,15 @@ fun ActivePrayerHero(
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = "${LanguageManager.get("now")}: ${data.currentPrayer?.let { LanguageManager.get(it.type.name.lowercase()) } ?: LanguageManager.get("isha")}",
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Start,
                         style = MaterialTheme.typography.titleMedium.copy(
-                            color = palette.accent,
+                            color = Color(0xFFFFD8E4), // Constant soft rose accent
                             fontWeight = FontWeight.Bold,
                             shadow = textShadow
-                        )
+                        ),
+                        maxLines = 1,
+                        softWrap = false
                     )
                 }
 
@@ -711,7 +893,7 @@ fun ActivePrayerHero(
                     Row(
                         modifier = Modifier
                             .background(Color(0xFF221F38).copy(alpha = 0.4f), RoundedCornerShape(50))
-                            .border(0.5.dp, palette.outline.copy(alpha = 0.3f), RoundedCornerShape(50))
+                            .border(0.5.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(50))
                             .clickable { onLocationClick() }
                             .padding(horizontal = 16.dp, vertical = 8.dp)
                             .align(Alignment.CenterStart),
@@ -721,20 +903,20 @@ fun ActivePrayerHero(
                         Icon(
                             imageVector = Icons.Default.LocationOn,
                             contentDescription = "Location",
-                            tint = palette.primary,
+                            tint = Color(0xFFA78BFA), // Constant light lavender
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
                             text = cityName,
                             style = MaterialTheme.typography.bodyMedium.copy(
-                                color = palette.textSecondary,
+                                color = Color.White, // Constant clean white text
                                 fontWeight = FontWeight.Bold
                             )
                         )
                         Icon(
                             imageVector = Icons.Default.KeyboardArrowRight,
                             contentDescription = "Chevron",
-                            tint = palette.textMuted,
+                            tint = Color.White.copy(alpha = 0.6f),
                             modifier = Modifier.size(16.dp)
                         )
                     }
@@ -751,9 +933,12 @@ fun CountdownText(
     modifier: Modifier = Modifier
 ) {
     Text(
-        text = countdownStrState.value,
+        text = LanguageManager.localizeNumerals(countdownStrState.value),
         style = style,
-        modifier = modifier
+        modifier = modifier,
+        textAlign = androidx.compose.ui.text.style.TextAlign.Start,
+        maxLines = 1,
+        softWrap = false
     )
 }
 
@@ -764,18 +949,20 @@ fun FriendlyRemainingText(
     modifier: Modifier = Modifier
 ) {
     val countdownStr = countdownStrState.value
-    val friendlyRemaining = remember(countdownStr) {
+    val currentLang = LanguageManager.currentLang.value
+    val friendlyRemaining = remember(countdownStr, currentLang) {
         val parts = countdownStr.split(":")
         if (parts.size >= 3) {
             val h = parts[0].toIntOrNull() ?: 0
             val m = parts[1].toIntOrNull() ?: 0
-            when {
-                h > 0 -> "-${h}h ${m}m"
-                m > 0 -> "-${m}m"
-                else -> "-1m"
+            val formatted = when {
+                h > 0 -> if (currentLang == "ar") "-${h}س ${m}د" else "-${h}h ${m}m"
+                m > 0 -> if (currentLang == "ar") "-${m}د" else "-${m}m"
+                else -> if (currentLang == "ar") "-1د" else "-1m"
             }
+            LanguageManager.localizeNumerals(formatted)
         } else {
-            countdownStr
+            LanguageManager.localizeNumerals(countdownStr)
         }
     }
     Text(
@@ -829,41 +1016,58 @@ data class PrayerStyleInfo(
 fun getPrayerStyleInfo(type: PrayerType): PrayerStyleInfo {
     return when (type) {
         PrayerType.FAJR -> PrayerStyleInfo(
-            subtitle = "Dawn",
+            subtitle = LanguageManager.get("sub_fajr"),
             icon = Icons.Default.WbTwilight,
             iconColor = Color(0xFFFFB74D), // Soft orange
             badgeBgColor = Color(0xFFE65100).copy(alpha = 0.15f)
         )
         PrayerType.SUNRISE -> PrayerStyleInfo(
-            subtitle = "Sunrise",
+            subtitle = LanguageManager.get("sub_sunrise"),
             icon = Icons.Default.WbTwilight,
             iconColor = Color(0xFFFFB74D), // Soft gold/orange
             badgeBgColor = Color(0xFFF57C00).copy(alpha = 0.15f)
         )
         PrayerType.DHUHR -> PrayerStyleInfo(
-            subtitle = "Midday",
+            subtitle = LanguageManager.get("sub_dhuhr"),
             icon = Icons.Default.WbSunny,
             iconColor = Color(0xFFFFD54F), // Golden yellow
             badgeBgColor = Color(0xFFFBC02D).copy(alpha = 0.15f)
         )
         PrayerType.ASR -> PrayerStyleInfo(
-            subtitle = "Afternoon",
+            subtitle = LanguageManager.get("sub_asr"),
             icon = Icons.Default.WbSunny,
             iconColor = Color(0xFFFF8A65), // Warm orange
             badgeBgColor = Color(0xFFE64A19).copy(alpha = 0.15f)
         )
         PrayerType.MAGHRIB -> PrayerStyleInfo(
-            subtitle = "Sunset",
+            subtitle = LanguageManager.get("sub_maghrib"),
             icon = Icons.Default.WbTwilight,
             iconColor = Color(0xFFE57373), // Red/rose
             badgeBgColor = Color(0xFFD32F2F).copy(alpha = 0.15f)
         )
         PrayerType.ISHA -> PrayerStyleInfo(
-            subtitle = "Night",
+            subtitle = LanguageManager.get("sub_isha"),
             icon = Icons.Default.NightsStay,
             iconColor = Color(0xFFB39DDB), // Light purple
             badgeBgColor = Color(0xFF512DA8).copy(alpha = 0.15f)
         )
+        PrayerType.QIYAM -> PrayerStyleInfo(
+            subtitle = LanguageManager.get("sub_qiyam"),
+            icon = Icons.Default.NightsStay,
+            iconColor = Color(0xFF81D4FA), // Cool light blue
+            badgeBgColor = Color(0xFF0288D1).copy(alpha = 0.15f)
+        )
+    }
+}
+
+fun getSunnahKey(type: PrayerType): String? {
+    return when (type) {
+        PrayerType.FAJR -> "sunnah_fajr"
+        PrayerType.DHUHR -> "sunnah_dhuhr"
+        PrayerType.ASR -> "sunnah_asr"
+        PrayerType.MAGHRIB -> "sunnah_maghrib"
+        PrayerType.ISHA -> "sunnah_isha"
+        else -> null
     }
 }
 
@@ -872,7 +1076,9 @@ fun PrayerTimeRow(
     item: PrayerTimeItem,
     isActive: Boolean,
     isPast: Boolean,
-    index: Int
+    index: Int,
+    nestedItem: PrayerTimeItem? = null,
+    currentActivePrayerType: PrayerType? = null
 ) {
     val palette by ThemeManager.currentPalette.collectAsState()
     val styleInfo = getPrayerStyleInfo(item.type)
@@ -889,112 +1095,287 @@ fun PrayerTimeRow(
 
     // Enforce constant rounded corner shape matching mockup
     val shape = RoundedCornerShape(16.dp)
+    var isExpanded by remember { mutableStateOf(false) }
+
+    val sunnahKey = getSunnahKey(item.type)
+
+    // Fajr expands for Sunrise, Isha expands for Qiyam
+    val hasNestedItem = nestedItem != null
+    val clickAction = if (sunnahKey != null || hasNestedItem) {
+        { isExpanded = !isExpanded }
+    } else {
+        null
+    }
 
     SalamCard(
         modifier = Modifier
             .fillMaxWidth()
-            .height(76.dp)
+            .heightIn(min = 76.dp)
             .staggeredEntrance(index)
             .scale(scale),
         elevation = if (isActive) 3 else 2,
         isActive = isActive,
-        shape = shape
+        shape = shape,
+        onClick = clickAction
     ) {
-        Row(
+        Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 14.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 12.dp)
         ) {
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Circular icon badge matching the mockup
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(palette.background.copy(alpha = 0.5f), CircleShape)
-                        .border(1.dp, palette.outline.copy(alpha = 0.5f), CircleShape),
-                    contentAlignment = Alignment.Center
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
                 ) {
-                    Icon(
-                        imageVector = styleInfo.icon,
-                        contentDescription = null,
-                        tint = styleInfo.iconColor,
-                        modifier = Modifier.size(20.dp)
-                    )
+                    // Circular icon badge matching the mockup
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(palette.background.copy(alpha = 0.5f), CircleShape)
+                            .border(1.dp, palette.outline.copy(alpha = 0.5f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = styleInfo.icon,
+                            contentDescription = null,
+                            tint = styleInfo.iconColor,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.width(12.dp))
+                    
+                    // Stacked name/description labels
+                    Column {
+                        Text(
+                            text = LanguageManager.get(item.type.name.lowercase()).replaceFirstChar {
+                                if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString()
+                            },
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = palette.textPrimary,
+                                fontSize = 15.sp
+                            )
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        
+                        Text(
+                            text = styleInfo.subtitle,
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                color = palette.textSecondary,
+                                fontSize = 11.sp
+                            )
+                        )
+                    }
                 }
-                
-                Spacer(modifier = Modifier.width(12.dp))
-                
-                // Stacked name/description labels
-                Column {
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Bold time text (colored palette.primary if active, else palette.textPrimary)
                     Text(
-                        text = LanguageManager.get(item.type.name.lowercase()).replaceFirstChar {
-                            if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString()
-                        },
+                        text = LanguageManager.formatDisplayTime(item.formattedTime),
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold,
-                            color = palette.textPrimary,
+                            color = if (isActive) palette.primary else palette.textPrimary,
                             fontSize = 15.sp
                         )
                     )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = styleInfo.subtitle,
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            color = palette.textSecondary,
-                            fontSize = 11.sp
+
+                    val context = androidx.compose.ui.platform.LocalContext.current
+                    val mode = NotificationHelper.getPrayerNotificationMode(context, item.type)
+                    val isOff = mode == "OFF"
+
+                    if (sunnahKey != null || hasNestedItem) {
+                        Icon(
+                            imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                            contentDescription = "Expand/Collapse details",
+                            tint = palette.textMuted.copy(alpha = 0.6f),
+                            modifier = Modifier.size(16.dp)
                         )
-                    )
+                    }
+
+                    // Right checkmark or active alerts bell circular badge
+                    Box(
+                        modifier = Modifier
+                            .size(26.dp)
+                            .background(
+                                color = if (isActive) palette.primary else Color.Transparent,
+                                shape = CircleShape
+                            )
+                            .border(
+                                width = 1.dp,
+                                color = if (isActive) palette.primary else palette.outline,
+                                shape = CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (isPast) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = "Completed",
+                                tint = if (isActive) palette.onPrimary else palette.primary,
+                                modifier = Modifier
+                                    .size(14.dp)
+                                    .align(Alignment.Center)
+                            )
+                        } else {
+                            Icon(
+                                imageVector = if (isOff) {
+                                    Icons.Default.NotificationsOff
+                                } else {
+                                    if (isActive) Icons.Default.NotificationsActive else Icons.Default.Notifications
+                                },
+                                contentDescription = if (isOff) "Muted Alert" else "Active Alert",
+                                tint = if (isActive) palette.onPrimary else palette.textMuted.copy(alpha = 0.5f),
+                                modifier = Modifier
+                                    .size(14.dp)
+                                    .align(Alignment.Center)
+                            )
+                        }
+                    }
                 }
             }
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            androidx.compose.animation.AnimatedVisibility(
+                visible = isExpanded,
+                enter = androidx.compose.animation.expandVertically() + androidx.compose.animation.fadeIn(),
+                exit = androidx.compose.animation.shrinkVertically() + androidx.compose.animation.fadeOut()
             ) {
-                // Bold time text (colored palette.primary if active, else palette.textPrimary)
-                Text(
-                    text = item.formattedTime,
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = if (isActive) palette.primary else palette.textPrimary,
-                        fontSize = 15.sp
-                    )
-                )
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    val description = when (item.type) {
+                        PrayerType.FAJR -> LanguageManager.get("sunnah_fajr")
+                        PrayerType.DHUHR -> LanguageManager.get("sunnah_dhuhr")
+                        PrayerType.ASR -> LanguageManager.get("sunnah_asr")
+                        PrayerType.MAGHRIB -> LanguageManager.get("sunnah_maghrib")
+                        PrayerType.ISHA -> LanguageManager.get("sunnah_isha")
+                        else -> ""
+                    }
+                    if (description.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = description,
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                color = palette.primary,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 11.sp
+                            ),
+                            modifier = Modifier.padding(start = 52.dp)
+                        )
+                    }
 
-                // Right checkmark or active alerts bell circular badge
-                Box(
-                    modifier = Modifier
-                        .size(26.dp)
-                        .background(
-                            color = if (isActive) palette.primary else Color.Transparent,
-                            shape = CircleShape
+                    if (nestedItem != null) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        androidx.compose.material3.HorizontalDivider(
+                            color = palette.outline.copy(alpha = 0.4f),
+                            thickness = 1.dp,
+                            modifier = Modifier.padding(start = 52.dp)
                         )
-                        .border(
-                            width = 1.dp,
-                            color = if (isActive) palette.primary else palette.outline,
-                            shape = CircleShape
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (isPast) {
-                        Icon(
-                            imageVector = Icons.Default.Check,
-                            contentDescription = "Completed",
-                            tint = if (isActive) palette.onPrimary else palette.primary,
-                            modifier = Modifier.size(14.dp)
-                        )
-                    } else {
-                        Icon(
-                            imageVector = if (isActive) Icons.Default.NotificationsActive else Icons.Default.Notifications,
-                            contentDescription = if (isActive) "Active Alert" else "Upcoming Alert",
-                            tint = if (isActive) palette.onPrimary else palette.textMuted.copy(alpha = 0.5f),
-                            modifier = Modifier.size(14.dp)
-                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        val nestedStyleInfo = getPrayerStyleInfo(nestedItem.type)
+                        val isNestedActive = currentActivePrayerType == nestedItem.type
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 52.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(28.dp)
+                                        .background(palette.background.copy(alpha = 0.3f), CircleShape)
+                                        .border(1.dp, palette.outline.copy(alpha = 0.3f), CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = nestedStyleInfo.icon,
+                                        contentDescription = null,
+                                        tint = nestedStyleInfo.iconColor,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column {
+                                    Text(
+                                        text = LanguageManager.get(nestedItem.type.name.lowercase()).replaceFirstChar {
+                                            if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString()
+                                        },
+                                        style = MaterialTheme.typography.bodyMedium.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            color = palette.textPrimary,
+                                            fontSize = 13.sp
+                                        )
+                                    )
+                                    Text(
+                                        text = nestedStyleInfo.subtitle,
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            color = palette.textSecondary,
+                                            fontSize = 10.sp
+                                        )
+                                    )
+                                }
+                            }
+
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Text(
+                                    text = LanguageManager.formatDisplayTime(nestedItem.formattedTime),
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isNestedActive) palette.primary else palette.textPrimary,
+                                        fontSize = 13.sp
+                                    )
+                                )
+
+                                val context = androidx.compose.ui.platform.LocalContext.current
+                                var nestedMode by remember(nestedItem.type) {
+                                    mutableStateOf(NotificationHelper.getPrayerNotificationMode(context, nestedItem.type))
+                                }
+                                val isNestedOff = nestedMode == "OFF"
+
+                                Box(
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .background(
+                                            color = if (isNestedActive) palette.primary else Color.Transparent,
+                                            shape = CircleShape
+                                        )
+                                        .border(
+                                            width = 1.dp,
+                                            color = if (isNestedActive) palette.primary else palette.outline,
+                                            shape = CircleShape
+                                        )
+                                        .salamClickable {
+                                            val newMode = if (isNestedOff) "ATHAN" else "OFF"
+                                            NotificationHelper.savePrayerNotificationMode(context, nestedItem.type, newMode)
+                                            NotificationHelper.schedulePrayerAlarms(context)
+                                            nestedMode = newMode
+                                        },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = if (isNestedOff) Icons.Default.NotificationsOff else {
+                                            if (isNestedActive) Icons.Default.NotificationsActive else Icons.Default.Notifications
+                                        },
+                                        contentDescription = "Nested Notification Option",
+                                        tint = if (isNestedActive) palette.onPrimary else palette.textMuted.copy(alpha = 0.6f),
+                                        modifier = Modifier.size(12.dp)
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }

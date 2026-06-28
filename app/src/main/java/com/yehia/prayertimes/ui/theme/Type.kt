@@ -16,6 +16,10 @@ val AmiriFontFamily = FontFamily(
     Font(R.font.amiri_bold, FontWeight.Bold)
 )
 
+val UthmanicFontFamily = FontFamily(
+    Font(R.font.uthmanic_hafs, FontWeight.Normal)
+)
+
 /**
  * Strict 4-tier type scale for M3 Expressive.
  *

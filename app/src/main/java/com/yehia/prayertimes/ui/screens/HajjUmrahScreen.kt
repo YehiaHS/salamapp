@@ -74,45 +74,47 @@ fun HajjUmrahScreen(
             onNavigateBack = onNavigateBack
         )
 
-        Spacer(modifier = Modifier.height(SalamSpacing.elementGap))
-
-        // Tab Header Row
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = SalamSpacing.cardGap),
-            horizontalArrangement = Arrangement.spacedBy(SalamSpacing.elementGap)
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(if (activeTab == 2) SalamSpacing.elementGap else SalamSpacing.cardGap),
+            modifier = Modifier.fillMaxSize()
         ) {
-            listOf("Hajj Guide", "Umrah Guide", "Checklist").forEachIndexed { index, name ->
-                val isSel = activeTab == index
-                val tabShape = if (isSel) SalamShapes.expressiveCorner1 else SalamShapes.cardSmall
-                Box(
+            item {
+                Spacer(modifier = Modifier.height(SalamSpacing.elementGap))
+
+                // Tab Header Row
+                Row(
                     modifier = Modifier
-                        .weight(1f)
-                        .clip(tabShape)
-                        .background(if (isSel) palette.primary else palette.surface.copy(alpha = 0.85f))
-                        .salamClickable { activeTab = index }
-                        .padding(vertical = 10.dp),
-                    contentAlignment = Alignment.Center
+                        .fillMaxWidth()
+                        .padding(bottom = SalamSpacing.cardGap),
+                    horizontalArrangement = Arrangement.spacedBy(SalamSpacing.elementGap)
                 ) {
-                    Text(
-                        text = name,
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = if (isSel) palette.background else palette.textPrimary
-                        )
-                    )
+                    listOf("Hajj Guide", "Umrah Guide", "Checklist").forEachIndexed { index, name ->
+                        val isSel = activeTab == index
+                        val tabShape = if (isSel) SalamShapes.expressiveCorner1 else SalamShapes.cardSmall
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(tabShape)
+                                .background(if (isSel) palette.primary else palette.surface.copy(alpha = 0.85f))
+                                .salamClickable { activeTab = index }
+                                .padding(vertical = 10.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = name,
+                                style = MaterialTheme.typography.labelMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isSel) palette.background else palette.textPrimary
+                                )
+                            )
+                        }
+                    }
                 }
             }
-        }
 
-        // Tab Content
-        when (activeTab) {
-            0 -> {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(SalamSpacing.cardGap),
-                    modifier = Modifier.fillMaxSize()
-                ) {
+            // Tab Content
+            when (activeTab) {
+                0 -> {
                     itemsIndexed(HajjData.hajjSteps, key = { _, step -> "hajj-${step.id}" }) { idx, step ->
                         PilgrimageStepRow(
                             step = step,
@@ -122,16 +124,8 @@ fun HajjUmrahScreen(
                             palette = palette
                         )
                     }
-                    item {
-                        Spacer(modifier = Modifier.height(SalamSpacing.sectionGap))
-                    }
                 }
-            }
-            1 -> {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(SalamSpacing.cardGap),
-                    modifier = Modifier.fillMaxSize()
-                ) {
+                1 -> {
                     itemsIndexed(HajjData.umrahSteps, key = { _, step -> "umrah-${step.id}" }) { idx, step ->
                         PilgrimageStepRow(
                             step = step,
@@ -141,16 +135,8 @@ fun HajjUmrahScreen(
                             palette = palette
                         )
                     }
-                    item {
-                        Spacer(modifier = Modifier.height(SalamSpacing.sectionGap))
-                    }
                 }
-            }
-            2 -> {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(SalamSpacing.elementGap),
-                    modifier = Modifier.fillMaxSize()
-                ) {
+                2 -> {
                     itemsIndexed(checklist, key = { _, item -> item }) { idx, item ->
                         val isChecked = checkStates[idx] ?: false
                         val checkShape = if (idx % 2 == 0) SalamShapes.expressiveCorner1 else SalamShapes.expressiveCorner2
@@ -198,10 +184,11 @@ fun HajjUmrahScreen(
                             }
                         }
                     }
-                    item {
-                        Spacer(modifier = Modifier.height(SalamSpacing.sectionGap))
-                    }
                 }
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(SalamSpacing.sectionGap))
             }
         }
     }

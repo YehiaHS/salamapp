@@ -15,15 +15,27 @@ import androidx.core.app.NotificationCompat
 import com.yehia.prayertimes.MainActivity
 import com.yehia.prayertimes.data.PrayerType
 import com.yehia.prayertimes.utils.NotificationHelper
+import com.yehia.prayertimes.utils.LanguageManager
 
 class PrayerNotificationReceiver : BroadcastReceiver() {
 
     private val TAG = "PrayerReceiver"
 
     override fun onReceive(context: Context, intent: Intent) {
-        val prayerName = intent.getStringExtra("PRAYER_NAME") ?: "Prayer"
+        val rawPrayerName = intent.getStringExtra("PRAYER_NAME") ?: "Prayer"
         val prayerTime = intent.getStringExtra("PRAYER_TIME") ?: ""
         val prayerTypeName = intent.getStringExtra("PRAYER_TYPE") ?: ""
+
+        // Initialize and load languages to translate title and text
+        LanguageManager.loadLanguage(context)
+
+        val prayerName = if (prayerTypeName.isNotEmpty()) {
+            LanguageManager.get(prayerTypeName.lowercase()).replaceFirstChar {
+                if (it.isLowerCase()) it.titlecase(java.util.Locale.getDefault()) else it.toString()
+            }
+        } else {
+            rawPrayerName
+        }
 
         Log.d(TAG, "Alarm received for $prayerName ($prayerTime)")
 

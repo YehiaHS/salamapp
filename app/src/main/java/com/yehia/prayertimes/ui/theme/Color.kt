@@ -272,29 +272,106 @@ val MidnightPurplePalette = ThemePalette(
     shimmer = Color(0x1AFFFFFF)
 )
 
+// Pantone Color of the Year 2024: Peach Fuzz
+val PeachFuzzPalette = ThemePalette(
+    background = Color(0xFFFFF7F2),
+    surface = Color(0xFFFFEFE6),
+    surfaceVariant = Color(0xFFFCDED0),
+    cardElevation1 = Color(0xFFFFEFE6),
+    cardElevation2 = Color(0xFFFFF3EC),
+    cardElevation3 = Color(0xFFFAD1C0),
+    primary = Color(0xFFFF9E79),
+    secondary = Color(0xFFFE7A47),
+    accent = Color(0xFFD35400),
+    onPrimary = Color(0xFFFFFFFF),
+    textPrimary = Color(0xFF4A2711),
+    textSecondary = Color(0xFF8A604A),
+    textMuted = Color(0xFFB59381),
+    glowColor = Color(0x26FF9E79),
+    error = Color(0xFFB3261E),
+    outline = Color(0xFFF1D1C2),
+    scrim = Color(0x66000000),
+    shimmer = Color(0x0A000000),
+    isLight = true
+)
+
+// Pantone Color of the Year 2023: Viva Magenta
+val VivaMagentaPalette = ThemePalette(
+    background = Color(0xFF12080B),
+    surface = Color(0xFF200F14),
+    surfaceVariant = Color(0xFF30171E),
+    cardElevation1 = Color(0xFF200F14),
+    cardElevation2 = Color(0xFF261219),
+    cardElevation3 = Color(0xFF331920),
+    primary = Color(0xFFFF5E84),
+    secondary = Color(0xFFBB2649),
+    accent = Color(0xFFFFB85C),
+    onPrimary = Color(0xFF12080B),
+    textPrimary = Color(0xFFFFF2F5),
+    textSecondary = Color(0xFFC79EA9),
+    textMuted = Color(0xFF7D5F66),
+    glowColor = Color(0x26FF5E84),
+    error = Color(0xFFFF6B6B),
+    outline = Color(0xFF3D1F27),
+    scrim = Color(0xCC000000),
+    shimmer = Color(0x1AFFFFFF),
+    isLight = false
+)
+
+// Pantone Color of the Year 2022: Very Peri
+val VeryPeriPalette = ThemePalette(
+    background = Color(0xFF0C0C14),
+    surface = Color(0xFF161626),
+    surfaceVariant = Color(0xFF222238),
+    cardElevation1 = Color(0xFF161626),
+    cardElevation2 = Color(0xFF1B1B30),
+    cardElevation3 = Color(0xFF262640),
+    primary = Color(0xFF8F93FF),
+    secondary = Color(0xFF6667AB),
+    accent = Color(0xFFFFB259),
+    onPrimary = Color(0xFF0C0C14),
+    textPrimary = Color(0xFFF2F3FC),
+    textSecondary = Color(0xFF9EA2C2),
+    textMuted = Color(0xFF616480),
+    glowColor = Color(0x268F93FF),
+    error = Color(0xFFFF6B6B),
+    outline = Color(0xFF2A2B47),
+    scrim = Color(0xCC000000),
+    shimmer = Color(0x1AFFFFFF),
+    isLight = false
+)
+
 // ─────────────────────────────────────────────────
 // APP THEME ENUM
 // ─────────────────────────────────────────────────
 enum class AppTheme(val displayName: String) {
+    TIME_OF_DAY("Time of Day"),
     SALAM_TWILIGHT("Salam Twilight"),
     EMERALD_NIGHT("Emerald Night"),
     ROYAL_GOLD("Royal Gold"),
     DESERT_ROSE("Desert Rose"),
     OCEAN_BLUE("Ocean Blue"),
     MIDNIGHT_PURPLE("Midnight Purple"),
+    PEACH_FUZZ("Peach Fuzz (2024)"),
+    VIVA_MAGENTA("Viva Magenta (2023)"),
+    VERY_PERI("Very Peri (2022)"),
     DYNAMIC("Dynamic Wallpaper"),
     CUSTOM("Custom");
 
     fun getPalette(): ThemePalette {
         return when (this) {
+            TIME_OF_DAY    -> TimeOfDayTheme.getPalette()
             SALAM_TWILIGHT -> SalamTwilightPalette
-            EMERALD_NIGHT -> EmeraldNightPalette
-            ROYAL_GOLD -> RoyalGoldPalette
-            DESERT_ROSE -> DesertRosePalette
-            OCEAN_BLUE -> OceanBluePalette
-            MIDNIGHT_PURPLE -> MidnightPurplePalette
-            DYNAMIC -> EmeraldNightPalette
-            CUSTOM -> ThemeManager.customPalette.value
+            EMERALD_NIGHT  -> EmeraldNightPalette
+            ROYAL_GOLD     -> RoyalGoldPalette
+            DESERT_ROSE    -> DesertRosePalette
+            OCEAN_BLUE     -> OceanBluePalette
+            MIDNIGHT_PURPLE-> MidnightPurplePalette
+            PEACH_FUZZ     -> PeachFuzzPalette
+            VIVA_MAGENTA   -> VivaMagentaPalette
+            VERY_PERI      -> VeryPeriPalette
+            DYNAMIC        -> EmeraldNightPalette
+            CUSTOM         -> ThemeManager.customPalette.value
         }
     }
 }

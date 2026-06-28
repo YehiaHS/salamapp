@@ -42,108 +42,115 @@ fun QuranListScreen(
     val searchQuery by viewModel.searchQuery.collectAsState()
     val bookmarkSurah by viewModel.bookmarkSurah.collectAsState()
     val bookmarkAyah by viewModel.bookmarkAyah.collectAsState()
+    val allSurahs by viewModel.surahs.collectAsState()
 
     SalamScreenScaffold {
-        // Screen Title
-        SalamSectionHeader(title = "Holy Quran")
-
-        // Search Bar
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { viewModel.updateSearch(it) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = SalamSpacing.cardGap),
-            placeholder = {
-                Text(
-                    "Search Surah name or number...",
-                    color = palette.textSecondary
-                )
-            },
-            leadingIcon = {
-                Icon(
-                    Icons.Default.Search,
-                    contentDescription = "Search",
-                    tint = palette.primary
-                )
-            },
-            singleLine = true,
-            shape = SalamShapes.pill,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = palette.primary,
-                unfocusedBorderColor = palette.outline,
-                focusedLabelColor = palette.primary,
-                cursorColor = palette.primary,
-                focusedContainerColor = palette.surface,
-                unfocusedContainerColor = palette.surface,
-                focusedTextColor = palette.textPrimary,
-                unfocusedTextColor = palette.textPrimary
-            )
-        )
-
-        // Verse-level Bookmark Resume Banner
-        if (bookmarkSurah > 0) {
-            val allSurahs by viewModel.surahs.collectAsState()
-            val bookmarkedSurah = allSurahs.find { it.number == bookmarkSurah }
-            if (bookmarkedSurah != null) {
-                SalamCard(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = SalamSpacing.cardPaddingInner),
-                    elevation = 3,
-                    isActive = true,
-                    shape = SalamShapes.squircle,
-                    onClick = { viewModel.selectSurah(bookmarkedSurah) }
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(SalamSpacing.cardPaddingInner),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        SalamIconBadge {
-                            Icon(
-                                Icons.Default.Book,
-                                contentDescription = "Bookmark",
-                                tint = palette.primary,
-                                modifier = Modifier.size(SalamSpacing.iconSize)
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(SalamSpacing.cardPaddingInner))
-                        Column {
-                            Text(
-                                text = "Resume Reading",
-                                style = MaterialTheme.typography.labelMedium.copy(
-                                    color = palette.primary,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            )
-                            Text(
-                                text = "Surah ${bookmarkedSurah.nameEnglish} • Verse $bookmarkAyah",
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    color = palette.textPrimary,
-                                    fontWeight = FontWeight.ExtraBold
-                                )
-                            )
-                            Text(
-                                text = "Click to jump back in",
-                                style = MaterialTheme.typography.labelMedium.copy(
-                                    color = palette.textMuted
-                                )
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
         // Surahs List
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(SalamSpacing.cardGap),
             modifier = Modifier.fillMaxSize()
         ) {
-            itemsIndexed(surahs, key = { _, it -> it.number }) { index, surah ->
-                SurahItemCard(surah = surah, index = index, palette = palette, onClick = { viewModel.selectSurah(surah) })
+            item {
+                SalamSectionHeader(
+                    title = "Holy Quran",
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+            }
+
+            item {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { viewModel.updateSearch(it) },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = {
+                        Text(
+                            "Search Surah name or number...",
+                            color = palette.textSecondary
+                        )
+                    },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Default.Search,
+                            contentDescription = "Search",
+                            tint = palette.primary
+                        )
+                    },
+                    singleLine = true,
+                    shape = SalamShapes.pill,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = palette.primary,
+                        unfocusedBorderColor = palette.outline,
+                        focusedLabelColor = palette.primary,
+                        cursorColor = palette.primary,
+                        focusedContainerColor = palette.surface,
+                        unfocusedContainerColor = palette.surface,
+                        focusedTextColor = palette.textPrimary,
+                        unfocusedTextColor = palette.textPrimary
+                    )
+                )
+            }
+
+            // Verse-level Bookmark Resume Banner
+            if (bookmarkSurah > 0) {
+                val bookmarkedSurah = allSurahs.find { it.number == bookmarkSurah }
+                if (bookmarkedSurah != null) {
+                    item {
+                        SalamCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            elevation = 3,
+                            isActive = true,
+                            shape = SalamShapes.squircle,
+                            onClick = { viewModel.selectSurah(bookmarkedSurah) }
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(SalamSpacing.cardPaddingInner),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                SalamIconBadge {
+                                    Icon(
+                                        Icons.Default.Book,
+                                        contentDescription = "Bookmark",
+                                        tint = palette.primary,
+                                        modifier = Modifier.size(SalamSpacing.iconSize)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(SalamSpacing.cardPaddingInner))
+                                Column {
+                                    Text(
+                                        text = "Resume Reading",
+                                        style = MaterialTheme.typography.labelMedium.copy(
+                                            color = palette.primary,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    )
+                                    Text(
+                                        text = "Surah ${bookmarkedSurah.nameEnglish} • Verse $bookmarkAyah",
+                                        style = MaterialTheme.typography.bodyMedium.copy(
+                                            color = palette.textPrimary,
+                                            fontWeight = FontWeight.ExtraBold
+                                        )
+                                    )
+                                    Text(
+                                        text = "Click to jump back in",
+                                        style = MaterialTheme.typography.labelMedium.copy(
+                                            color = palette.textMuted
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            items(surahs, key = { it.number }) { surah ->
+                SurahItemCard(surah = surah, palette = palette, onClick = { viewModel.selectSurah(surah) })
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(100.dp))
             }
         }
     }
@@ -152,7 +159,6 @@ fun QuranListScreen(
 @Composable
 fun SurahItemCard(
     surah: Surah,
-    index: Int,
     palette: com.yehia.prayertimes.ui.theme.ThemePalette,
     onClick: () -> Unit
 ) {

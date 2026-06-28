@@ -31,6 +31,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -63,15 +64,42 @@ object SalamSpacing {
 // SHAPE SYSTEM
 // ─────────────────────────────────────────────────
 object SalamShapes {
+    // Static fallbacks (used in non-composable contexts)
     val cardLarge = RoundedCornerShape(28.dp)
     val cardMedium = RoundedCornerShape(22.dp)
     val cardSmall = RoundedCornerShape(16.dp)
     val pill = RoundedCornerShape(50)
     val circle = CircleShape
-    // Material 3 Expressive shapes (overridden with symmetric Apple-style rectangular squircles)
     val expressiveCorner1 = RoundedCornerShape(20.dp)
     val expressiveCorner2 = RoundedCornerShape(16.dp)
     val squircle = RoundedCornerShape(34.dp)
+}
+
+/** Adaptive shape set — reads scale from CompositionLocal. Use inside @Composable contexts. */
+data class AdaptiveShapes(
+    val cardLarge: RoundedCornerShape,
+    val cardMedium: RoundedCornerShape,
+    val cardSmall: RoundedCornerShape,
+    val expressiveCorner1: RoundedCornerShape,
+    val expressiveCorner2: RoundedCornerShape,
+    val squircle: RoundedCornerShape,
+    val pill: RoundedCornerShape = RoundedCornerShape(50),
+    val circle: androidx.compose.ui.graphics.Shape = CircleShape
+)
+
+@Composable
+fun rememberAdaptiveShapes(): AdaptiveShapes {
+    val scale = LocalAdaptiveScale.current.corners
+    return remember(scale) {
+        AdaptiveShapes(
+            cardLarge = RoundedCornerShape((28f * scale).coerceIn(20f, 36f).dp),
+            cardMedium = RoundedCornerShape((22f * scale).coerceIn(16f, 28f).dp),
+            cardSmall = RoundedCornerShape((16f * scale).coerceIn(12f, 22f).dp),
+            expressiveCorner1 = RoundedCornerShape((20f * scale).coerceIn(14f, 26f).dp),
+            expressiveCorner2 = RoundedCornerShape((16f * scale).coerceIn(12f, 22f).dp),
+            squircle = RoundedCornerShape((34f * scale).coerceIn(24f, 44f).dp)
+        )
+    }
 }
 
 // ─────────────────────────────────────────────────
@@ -201,14 +229,18 @@ fun SalamCard(
     val palette = LocalThemePalette.current
 
     val containerColor = if (isActive) {
-        palette.primary.copy(alpha = if (palette.isLight) 0.12f else 0.18f)
+        if (palette.isLight) {
+            palette.primary.copy(alpha = 0.12f).compositeOver(palette.surface)
+        } else {
+            palette.primary.copy(alpha = 0.18f)
+        }
     } else {
         val base = when (elevation) {
             1 -> palette.cardElevation1
             3 -> palette.cardElevation3
             else -> palette.cardElevation2
         }
-        base.copy(alpha = if (palette.isLight) 0.94f else 0.9f)
+        if (palette.isLight) base else base.copy(alpha = 0.9f)
     }
 
     val border = if (isActive) {
@@ -278,6 +310,10 @@ fun SalamScreenScaffold(
     content: @Composable ColumnScope.() -> Unit
 ) {
     val palette by ThemeManager.currentPalette.collectAsState()
+    val gradientsEnabled by ThemeManager.gradientsEnabled.collectAsState()
+    // Adaptive screen padding: scales with screen width (clamped 16–32dp horizontal)
+    val hPadding = AdaptiveSpacing.screenPaddingH
+    val vPadding = AdaptiveSpacing.screenPaddingV
 
     Box(
         modifier = modifier
@@ -287,30 +323,32 @@ fun SalamScreenScaffold(
                 else Modifier.background(palette.background)
             )
             .drawBehind {
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(
-                            palette.primary.copy(alpha = if (palette.isLight) 0.075f else 0.13f),
-                            Color.Transparent
+                if (gradientsEnabled) {
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            colors = listOf(
+                                palette.primary.copy(alpha = if (palette.isLight) 0.075f else 0.13f),
+                                Color.Transparent
+                            ),
+                            center = Offset(size.width * 0.9f, size.height * 0.04f),
+                            radius = size.minDimension * 0.58f
                         ),
-                        center = Offset(size.width * 0.9f, size.height * 0.04f),
-                        radius = size.minDimension * 0.58f
-                    ),
-                    radius = size.minDimension * 0.58f,
-                    center = Offset(size.width * 0.9f, size.height * 0.04f)
-                )
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(
-                            palette.accent.copy(alpha = if (palette.isLight) 0.06f else 0.1f),
-                            Color.Transparent
+                        radius = size.minDimension * 0.58f,
+                        center = Offset(size.width * 0.9f, size.height * 0.04f)
+                    )
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            colors = listOf(
+                                palette.accent.copy(alpha = if (palette.isLight) 0.06f else 0.1f),
+                                Color.Transparent
+                            ),
+                            center = Offset(size.width * 0.02f, size.height * 0.92f),
+                            radius = size.minDimension * 0.44f
                         ),
-                        center = Offset(size.width * 0.02f, size.height * 0.92f),
-                        radius = size.minDimension * 0.44f
-                    ),
-                    radius = size.minDimension * 0.44f,
-                    center = Offset(size.width * 0.02f, size.height * 0.92f)
-                )
+                        radius = size.minDimension * 0.44f,
+                        center = Offset(size.width * 0.02f, size.height * 0.92f)
+                    )
+                }
             }
     ) {
         if (showGeometricPattern) {
@@ -321,9 +359,9 @@ fun SalamScreenScaffold(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(
-                    start = SalamSpacing.screenPaddingH,
-                    end = SalamSpacing.screenPaddingH,
-                    top = SalamSpacing.screenPaddingV,
+                    start = hPadding,
+                    end = hPadding,
+                    top = vPadding,
                     bottom = 0.dp
                 ),
             content = content
@@ -419,11 +457,14 @@ fun SalamTopBar(
     actions: @Composable RowScope.() -> Unit = {}
 ) {
     val palette = LocalThemePalette.current
+    val adaptiveScale = LocalAdaptiveScale.current
+    // Top bar height scales between 52dp (compact) and 64dp (expanded)
+    val barHeight = (48f + adaptiveScale.screenWidthDp.coerceIn(320, 640) * 0.02f).coerceIn(52f, 64f).dp
 
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(56.dp),
+            .height(barHeight),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -433,13 +474,13 @@ fun SalamTopBar(
         ) {
             IconButton(
                 onClick = onNavigateBack,
-                modifier = Modifier.size(SalamSpacing.touchTarget)
+                modifier = Modifier.size(AdaptiveSpacing.touchTarget)
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
                     tint = palette.textPrimary,
-                    modifier = Modifier.size(SalamSpacing.iconSize)
+                    modifier = Modifier.size(AdaptiveSpacing.iconSize)
                 )
             }
             Spacer(modifier = Modifier.width(4.dp))
@@ -466,11 +507,14 @@ fun SalamSectionHeader(
     trailingContent: @Composable (() -> Unit)? = null
 ) {
     val palette = LocalThemePalette.current
+    val cardGap = AdaptiveSpacing.cardGap
+    // Accent underline width scales with screen (32–52dp)
+    val underlineWidth = (38f * LocalAdaptiveScale.current.spacing).coerceIn(28f, 56f).dp
 
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(bottom = SalamSpacing.cardGap),
+            .padding(bottom = cardGap),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -486,7 +530,7 @@ fun SalamSectionHeader(
             Spacer(modifier = Modifier.height(4.dp))
             Box(
                 modifier = Modifier
-                    .width(42.dp)
+                    .width(underlineWidth)
                     .height(4.dp)
                     .background(
                         brush = Brush.horizontalGradient(
@@ -506,7 +550,7 @@ fun SalamSectionHeader(
 @Composable
 fun SalamIconBadge(
     modifier: Modifier = Modifier,
-    size: Dp = SalamSpacing.iconBackgroundSize,
+    size: Dp = AdaptiveSpacing.iconBackgroundSize,
     content: @Composable BoxScope.() -> Unit
 ) {
     val palette = LocalThemePalette.current

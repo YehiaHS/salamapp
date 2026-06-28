@@ -94,47 +94,46 @@ fun HadithScreen(
             onNavigateBack = onNavigateBack
         )
 
-        // Integrated elegant search box
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { 
-                searchQuery = it 
-                // Close any open expanded card during search to avoid jumps
-                expandedHadithId = -1
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = SalamSpacing.elementGap),
-            placeholder = { Text("Search verified hadiths...", color = palette.textMuted) },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search", tint = palette.primary) },
-            trailingIcon = {
-                if (searchQuery.isNotEmpty()) {
-                    IconButton(onClick = { searchQuery = "" }) {
-                        Icon(Icons.Default.Clear, contentDescription = "Clear", tint = palette.textSecondary)
-                    }
-                }
-            },
-            singleLine = true,
-            shape = SalamShapes.pill,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = palette.cardElevation2,
-                unfocusedContainerColor = palette.cardElevation1,
-                focusedBorderColor = palette.primary,
-                unfocusedBorderColor = palette.outline.copy(alpha = 0.35f),
-                focusedTextColor = palette.textPrimary,
-                unfocusedTextColor = palette.textPrimary
-            )
-        )
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(SalamSpacing.cardGap)
+        ) {
+            // Item 1: Search Box
+            item {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { 
+                        searchQuery = it 
+                        // Close any open expanded card during search to avoid jumps
+                        expandedHadithId = -1
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = SalamSpacing.elementGap),
+                    placeholder = { Text("Search verified hadiths...", color = palette.textMuted) },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search", tint = palette.primary) },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Default.Clear, contentDescription = "Clear", tint = palette.textSecondary)
+                            }
+                        }
+                    },
+                    singleLine = true,
+                    shape = SalamShapes.pill,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = palette.cardElevation2,
+                        unfocusedContainerColor = palette.cardElevation1,
+                        focusedBorderColor = palette.primary,
+                        unfocusedBorderColor = palette.outline.copy(alpha = 0.35f),
+                        focusedTextColor = palette.textPrimary,
+                        unfocusedTextColor = palette.textPrimary
+                    )
+                )
+            }
 
-        Spacer(modifier = Modifier.height(SalamSpacing.elementGap))
-
-        if (searchQuery.isBlank()) {
-            // ─── MAIN MODE: DAILY HADITH BANNER + ALL VERIFIED HADITHS LIST ───
-            LazyColumn(
-                modifier = Modifier.fillMaxSize().weight(1f),
-                verticalArrangement = Arrangement.spacedBy(SalamSpacing.cardGap)
-            ) {
-                // Item 1: Daily Hadith Swipeable Banner
+            if (searchQuery.isBlank()) {
+                // Item 2: Daily Hadith Swipeable Banner
                 item {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
@@ -320,7 +319,7 @@ fun HadithScreen(
                     }
                 }
 
-                // Item 2: Verified Hadith List Section Header
+                // Item 3: Verified Hadith List Section Header
                 item {
                     Spacer(modifier = Modifier.height(SalamSpacing.elementGap))
                     Text(
@@ -333,7 +332,7 @@ fun HadithScreen(
                     )
                 }
 
-                // Item 3+: All verified Ahadith (Expandable Cards)
+                // Item 4+: All verified Ahadith (Expandable Cards)
                 itemsIndexed(hadiths, key = { _, it -> it.id }) { index, hadith ->
                     ExpandableHadithCard(
                         hadith = hadith,
@@ -353,21 +352,18 @@ fun HadithScreen(
                 item {
                     Spacer(modifier = Modifier.height(SalamSpacing.sectionGap))
                 }
-            }
-        } else {
-            // ─── SEARCH MODE: FILTERED LIST ───
-            if (filteredHadiths.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize().weight(1f),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("No matching verified hadiths found.", color = palette.textSecondary)
-                }
             } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize().weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(SalamSpacing.cardGap)
-                ) {
+                // ─── SEARCH MODE ───
+                if (filteredHadiths.isEmpty()) {
+                    item {
+                        Box(
+                            modifier = Modifier.fillMaxWidth().height(300.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("No matching verified hadiths found.", color = palette.textSecondary)
+                        }
+                    }
+                } else {
                     itemsIndexed(filteredHadiths, key = { _, it -> it.id }) { index, hadith ->
                         ExpandableHadithCard(
                             hadith = hadith,

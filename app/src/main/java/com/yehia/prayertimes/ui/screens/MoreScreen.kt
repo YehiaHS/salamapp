@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
@@ -64,24 +65,23 @@ fun MoreScreen(
     LanguageManager.currentLang
 
     SalamScreenScaffold {
-        Text(
-            text = LanguageManager.get("tab_more"),
-            style = MaterialTheme.typography.headlineMedium.copy(
-                color = palette.primary,
-                fontWeight = FontWeight.ExtraBold
-            ),
-            modifier = Modifier.padding(bottom = SalamSpacing.cardPaddingInner)
-        )
-
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             horizontalArrangement = Arrangement.spacedBy(SalamSpacing.cardGap),
             verticalArrangement = Arrangement.spacedBy(SalamSpacing.cardGap),
-            contentPadding = PaddingValues(bottom = 24.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
+            contentPadding = PaddingValues(bottom = 110.dp),
+            modifier = Modifier.fillMaxSize()
         ) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Text(
+                    text = LanguageManager.get("tab_more"),
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        color = palette.primary,
+                        fontWeight = FontWeight.ExtraBold
+                    ),
+                    modifier = Modifier.padding(bottom = SalamSpacing.cardPaddingInner)
+                )
+            }
             item {
                 Box(modifier = Modifier.staggeredEntrance(0)) {
                     MoreMenuCard(

@@ -84,29 +84,68 @@ class AthanPlayerService : Service() {
     }
 
     private fun playAthan() {
-        val athanResId = resources.getIdentifier("athan", "raw", packageName)
-        if (athanResId != 0) {
-            try {
-                mediaPlayer = MediaPlayer.create(this, athanResId).apply {
+        val muezzinKey = NotificationHelper.getSavedMuezzin(this)
+        val localFile = java.io.File(filesDir, "athan_$muezzinKey.mp3")
+
+        try {
+            if (localFile.exists() && localFile.length() > 100000L) {
+                Log.d(TAG, "Playing local Muezzin file: ${localFile.absolutePath}")
+                mediaPlayer = MediaPlayer().apply {
                     setAudioAttributes(
                         AudioAttributes.Builder()
                             .setUsage(AudioAttributes.USAGE_ALARM)
                             .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                             .build()
                     )
+                    setDataSource(localFile.absolutePath)
                     setOnCompletionListener {
                         Log.d(TAG, "Athan playback completed")
                         stopSelf()
                     }
+                    prepare()
                     start()
                 }
-                Log.d(TAG, "Athan sound started successfully")
-            } catch (e: Exception) {
-                Log.e(TAG, "Error playing raw athan audio", e)
-                stopSelf()
+            } else {
+                val athanResId = resources.getIdentifier("athan", "raw", packageName)
+                if (athanResId != 0) {
+                    Log.d(TAG, "Playing raw 'athan' resource")
+                    mediaPlayer = MediaPlayer.create(this, athanResId).apply {
+                        setAudioAttributes(
+                            AudioAttributes.Builder()
+                                .setUsage(AudioAttributes.USAGE_ALARM)
+                                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                                .build()
+                        )
+                        setOnCompletionListener {
+                            Log.d(TAG, "Athan playback completed")
+                            stopSelf()
+                        }
+                        start()
+                    }
+                } else {
+                    Log.d(TAG, "No local file or raw resource, falling back to system default alarm/ringtone")
+                    val alarmUri = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_ALARM)
+                        ?: android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION)
+                    mediaPlayer = MediaPlayer().apply {
+                        setAudioAttributes(
+                            AudioAttributes.Builder()
+                                .setUsage(AudioAttributes.USAGE_ALARM)
+                                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                                .build()
+                        )
+                        setDataSource(this@AthanPlayerService, alarmUri)
+                        setOnCompletionListener {
+                            Log.d(TAG, "Athan playback completed")
+                            stopSelf()
+                        }
+                        prepare()
+                        start()
+                    }
+                }
             }
-        } else {
-            Log.d(TAG, "No raw 'athan' resource found, stopping service")
+            Log.d(TAG, "Athan sound started successfully")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error playing athan audio", e)
             stopSelf()
         }
     }

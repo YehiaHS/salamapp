@@ -1,36 +1,42 @@
 package com.yehia.prayertimes.ui.screens
 
+import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.Canvas
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Directions
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Mosque
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import com.yehia.prayertimes.ui.theme.*
 import com.yehia.prayertimes.ui.viewmodel.PrayerViewModel
-import kotlin.math.cos
-import kotlin.math.sin
+import org.osmdroid.config.Configuration
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.overlay.Marker
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,6 +50,11 @@ fun MosqueHalalScreen(
 
     val lat by viewModel.latitude.collectAsState()
     val lng by viewModel.longitude.collectAsState()
+
+    // Configure user agent for OpenStreetMap requirements
+    LaunchedEffect(Unit) {
+        Configuration.getInstance().userAgentValue = context.packageName
+    }
 
     // Filter categories: 0: Mosques, 1: Halal Food
     var activeCategory by remember { mutableStateOf(0) }
@@ -62,8 +73,54 @@ fun MosqueHalalScreen(
         )
     }
 
-    val filteredPlaces = remember(activeCategory) {
+    val filteredPlaces = remember(activeCategory, places) {
         places.filter { if (activeCategory == 0) it.isMosque else !it.isMosque }
+    }
+
+    // Keep track of the selected place to pan/focus on OpenStreetMap
+    var selectedPlace by remember(filteredPlaces) { mutableStateOf<MockPlace?>(null) }
+
+    // Setup MapView state
+    var osmMapViewInstance by remember { mutableStateOf<org.osmdroid.views.MapView?>(null) }
+
+    // Update map markers when location coordinates or activeCategory/places change
+    LaunchedEffect(filteredPlaces, osmMapViewInstance) {
+        val map = osmMapViewInstance ?: return@LaunchedEffect
+        map.overlays.clear()
+
+        // 1. User current location marker
+        val userGeoPoint = GeoPoint(lat, lng)
+        val userMarker = Marker(map).apply {
+            position = userGeoPoint
+            setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+            title = "Your Location"
+        }
+        map.overlays.add(userMarker)
+
+        // 2. Add category markers
+        filteredPlaces.forEach { place ->
+            val placeGeoPoint = GeoPoint(place.lat, place.lng)
+            val marker = Marker(map).apply {
+                position = placeGeoPoint
+                setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                title = place.name
+                subDescription = place.address
+            }
+            map.overlays.add(marker)
+        }
+
+        // Center on user location
+        map.controller.setZoom(14.5)
+        map.controller.setCenter(userGeoPoint)
+        map.invalidate()
+    }
+
+    // Pan camera to specific place when item clicked
+    LaunchedEffect(selectedPlace) {
+        val map = osmMapViewInstance ?: return@LaunchedEffect
+        val place = selectedPlace ?: return@LaunchedEffect
+        map.controller.animateTo(GeoPoint(place.lat, place.lng))
+        map.controller.setZoom(16.0)
     }
 
     SalamScreenScaffold {
@@ -72,111 +129,150 @@ fun MosqueHalalScreen(
             onNavigateBack = onNavigateBack
         )
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .weight(1f),
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(SalamSpacing.cardGap)
         ) {
-            Spacer(modifier = Modifier.height(SalamSpacing.elementGap))
-
-            // Radar Scanner component isolated to avoid high-frequency root recompositions
-            RadarScanner(
-                lat = lat,
-                lng = lng,
-                filteredPlaces = filteredPlaces,
-                palette = palette
-            )
+            // OpenStreetMap Card container
+            item {
+                Spacer(modifier = Modifier.height(SalamSpacing.elementGap))
+                SalamCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(280.dp),
+                    elevation = 3,
+                    shape = SalamShapes.cardLarge
+                ) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        AndroidView(
+                            factory = { context ->
+                                org.osmdroid.views.MapView(context).apply {
+                                    setTileSource(TileSourceFactory.MAPNIK)
+                                    setMultiTouchControls(true)
+                                    zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.SHOW_AND_FADEOUT)
+                                    osmMapViewInstance = this
+                                }
+                            },
+                            update = { /* No-op */ },
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                }
+            }
 
             // Sub Category Switch Row using custom styled cards
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(SalamSpacing.cardGap)
-            ) {
-                listOf("Nearby Mosques", "Halal Restaurants").forEachIndexed { index, name ->
-                    val isSel = activeCategory == index
-                    val tabShape = if (index == 0) SalamShapes.expressiveCorner1 else SalamShapes.expressiveCorner2
-                    SalamCard(
-                        modifier = Modifier.weight(1f),
-                        isActive = isSel,
-                        shape = tabShape,
-                        onClick = { activeCategory = index }
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 10.dp),
-                            contentAlignment = Alignment.Center
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(SalamSpacing.cardGap)
+                ) {
+                    listOf("Nearby Mosques", "Halal Restaurants").forEachIndexed { index, name ->
+                        val isSel = activeCategory == index
+                        val tabShape = if (index == 0) SalamShapes.expressiveCorner1 else SalamShapes.expressiveCorner2
+                        SalamCard(
+                            modifier = Modifier.weight(1f),
+                            isActive = isSel,
+                            shape = tabShape,
+                            onClick = { activeCategory = index }
                         ) {
-                            Text(
-                                text = name,
-                                style = MaterialTheme.typography.labelLarge.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (isSel) palette.primary else palette.textPrimary
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 10.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = name,
+                                    style = MaterialTheme.typography.labelLarge.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isSel) palette.primary else palette.textPrimary
+                                    )
                                 )
-                            )
+                            }
                         }
                     }
                 }
             }
 
-            // Places List
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .weight(1f),
-                verticalArrangement = Arrangement.spacedBy(SalamSpacing.cardGap)
-            ) {
-                itemsIndexed(filteredPlaces, key = { _, it -> it.name }) { index, place ->
-                    val itemShape = if (index % 2 == 0) SalamShapes.expressiveCorner1 else SalamShapes.expressiveCorner2
-                    SalamCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        elevation = 2,
-                        shape = itemShape
+            // Places List with Click Pan + Maps Launcher Actions
+            itemsIndexed(filteredPlaces, key = { _, it -> it.name }) { index, place ->
+                val isSelected = selectedPlace?.name == place.name
+                val itemShape = if (index % 2 == 0) SalamShapes.expressiveCorner1 else SalamShapes.expressiveCorner2
+                
+                SalamCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(
+                            width = if (isSelected) 1.5.dp else 0.dp,
+                            color = if (isSelected) palette.primary else Color.Transparent,
+                            shape = itemShape
+                        ),
+                    elevation = 2,
+                    shape = itemShape,
+                    onClick = { selectedPlace = place }
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(SalamSpacing.cardPaddingInner),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(SalamSpacing.cardPaddingInner),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            modifier = Modifier.weight(1f)
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                SalamIconBadge {
-                                    Icon(
-                                        imageVector = if (place.isMosque) Icons.Default.Mosque else Icons.Default.Restaurant,
-                                        contentDescription = null,
-                                        tint = palette.primary,
-                                        modifier = Modifier.size(SalamSpacing.iconSize)
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(SalamSpacing.cardPaddingInner))
-                                Column {
-                                    Text(
-                                        text = place.name,
-                                        style = MaterialTheme.typography.titleMedium.copy(
-                                            fontWeight = FontWeight.Bold,
-                                            color = palette.textPrimary
-                                        )
-                                    )
-                                    Text(
-                                        text = place.address,
-                                        style = MaterialTheme.typography.bodySmall.copy(color = palette.textSecondary)
-                                    )
-                                }
+                            SalamIconBadge {
+                                Icon(
+                                    imageVector = if (place.isMosque) Icons.Default.Mosque else Icons.Default.Restaurant,
+                                    contentDescription = null,
+                                    tint = palette.primary,
+                                    modifier = Modifier.size(SalamSpacing.iconSize)
+                                )
                             }
-                            Column(horizontalAlignment = Alignment.End) {
+                            Spacer(modifier = Modifier.width(SalamSpacing.cardPaddingInner))
+                            Column {
                                 Text(
-                                    text = "%.2f km".format(place.distance),
+                                    text = place.name,
                                     style = MaterialTheme.typography.titleMedium.copy(
-                                        fontWeight = FontWeight.ExtraBold,
-                                        color = palette.primary
+                                        fontWeight = FontWeight.Bold,
+                                        color = palette.textPrimary
                                     )
                                 )
-                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = place.address,
+                                    style = MaterialTheme.typography.bodySmall.copy(color = palette.textSecondary)
+                                )
+                            }
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(
+                                text = "%.2f km".format(place.distance),
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = palette.primary
+                                )
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                // Maps App Route Directions Intent Launcher
+                                IconButton(
+                                    onClick = {
+                                        val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}"))
+                                        context.startActivity(webIntent)
+                                    },
+                                    modifier = Modifier.size(SalamSpacing.touchTarget)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Directions,
+                                        contentDescription = "Get Directions",
+                                        tint = palette.primary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                                
+                                Spacer(modifier = Modifier.width(4.dp))
+
                                 IconButton(
                                     onClick = {
                                         clipboard.setText(AnnotatedString(place.address))
@@ -196,94 +292,9 @@ fun MosqueHalalScreen(
                     }
                 }
             }
-        }
-    }
-}
 
-@Composable
-fun RadarScanner(
-    lat: Double,
-    lng: Double,
-    filteredPlaces: List<MockPlace>,
-    palette: ThemePalette
-) {
-    // Radar Scanning Animation is local to this composable
-    val infiniteTransition = rememberInfiniteTransition(label = "radarTransition")
-    val rotationAngle by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 4000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "radarRotation"
-    )
-
-    SalamCard(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(200.dp),
-        elevation = 2,
-        shape = SalamShapes.cardLarge
-    ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Canvas(modifier = Modifier.size(160.dp)) {
-                val radius = size.minDimension / 2f
-                val center = Offset(size.width / 2f, size.height / 2f)
-
-                // Draw concentric radar grids
-                drawCircle(color = palette.primary.copy(alpha = 0.1f), radius = radius, center = center, style = Stroke(1.dp.toPx()))
-                drawCircle(color = palette.primary.copy(alpha = 0.15f), radius = radius * 0.66f, center = center, style = Stroke(1.dp.toPx()))
-                drawCircle(color = palette.primary.copy(alpha = 0.2f), radius = radius * 0.33f, center = center, style = Stroke(1.dp.toPx()))
-
-                // Draw cross axes lines
-                drawLine(color = palette.primary.copy(alpha = 0.15f), start = Offset(0f, center.y), end = Offset(size.width, center.y), strokeWidth = 1.dp.toPx())
-                drawLine(color = palette.primary.copy(alpha = 0.15f), start = Offset(center.x, 0f), end = Offset(center.x, size.height), strokeWidth = 1.dp.toPx())
-
-                // Draw rotating scanning beam
-                val angleRad = Math.toRadians(rotationAngle.toDouble())
-                val endX = center.x + radius * cos(angleRad).toFloat()
-                val endY = center.y + radius * sin(angleRad).toFloat()
-
-                drawLine(
-                    brush = Brush.linearGradient(
-                        colors = listOf(palette.primary, Color.Transparent),
-                        start = center,
-                        end = Offset(endX, endY)
-                    ),
-                    start = center,
-                    end = Offset(endX, endY),
-                    strokeWidth = 3.dp.toPx()
-                )
-
-                // Draw center pulse
-                drawCircle(color = palette.primary, radius = 5.dp.toPx(), center = center)
-
-                // Draw target points on the radar
-                filteredPlaces.forEach { place ->
-                    val dx = ((place.lat - lat) * 8000.0).toFloat()
-                    val dy = ((place.lng - lng) * 8000.0).toFloat()
-                    val targetCenter = Offset(
-                        (center.x + dx).coerceIn(4f, size.width - 4f),
-                        (center.y + dy).coerceIn(4f, size.height - 4f)
-                    )
-
-                    // Draw a glowing point for mosques or dining
-                    drawCircle(
-                        color = if (place.isMosque) palette.primary else palette.accent,
-                        radius = 4.dp.toPx(),
-                        center = targetCenter
-                    )
-                    drawCircle(
-                        color = (if (place.isMosque) palette.primary else palette.accent).copy(alpha = 0.3f),
-                        radius = 8.dp.toPx(),
-                        center = targetCenter,
-                        style = Stroke(1.dp.toPx())
-                    )
-                }
+            item {
+                Spacer(modifier = Modifier.height(SalamSpacing.sectionGap))
             }
         }
     }

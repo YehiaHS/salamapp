@@ -20,9 +20,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -367,13 +370,15 @@ fun SettingsScreen(
                         PrayerType.DHUHR to "dhuhr",
                         PrayerType.ASR to "asr",
                         PrayerType.MAGHRIB to "maghrib",
-                        PrayerType.ISHA to "isha"
+                        PrayerType.ISHA to "isha",
+                        PrayerType.QIYAM to "qiyam"
                     )
 
                     targetPrayers.forEachIndexed { index, (type, translationKey) ->
                         var activeMode by remember {
                             mutableStateOf(NotificationHelper.getPrayerNotificationMode(context, type))
                         }
+                        var isExpanded by remember { mutableStateOf(false) }
 
                         Column(
                             modifier = Modifier
@@ -444,6 +449,124 @@ fun SettingsScreen(
                                     }
                                 }
                             }
+
+                            if (activeMode != "OFF") {
+                                Spacer(modifier = Modifier.height(10.dp))
+                                
+                                // Expandable Toggle Header
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(palette.surfaceVariant.copy(alpha = 0.25f), SalamShapes.cardSmall)
+                                        .clickable { isExpanded = !isExpanded }
+                                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        text = "Reminder & Iqamah Settings",
+                                        style = MaterialTheme.typography.bodyMedium.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            color = palette.textSecondary
+                                        )
+                                    )
+                                    Icon(
+                                        imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                        contentDescription = "Toggle Collapse",
+                                        tint = palette.textMuted
+                                    )
+                                }
+
+                                AnimatedVisibility(visible = isExpanded) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(top = 10.dp, start = 4.dp, end = 4.dp)
+                                    ) {
+                                        // --- PRE-PRAYER REMINDER ---
+                                        Text(
+                                            text = LanguageManager.get("pre_prayer_reminder"),
+                                            style = MaterialTheme.typography.labelMedium.copy(
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = palette.textSecondary
+                                            )
+                                        )
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        val preOffsets = listOf(0, 5, 10, 15, 30)
+                                        var selectedPreOffset by remember {
+                                            mutableStateOf(NotificationHelper.getPrePrayerOffset(context, type))
+                                        }
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .horizontalScroll(rememberScrollState()),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            preOffsets.forEach { offset ->
+                                                val isSelected = selectedPreOffset == offset
+                                                val label = if (offset == 0) LanguageManager.get("none") else "$offset ${LanguageManager.get("minutes_before")}"
+                                                FilterChip(
+                                                    selected = isSelected,
+                                                    onClick = {
+                                                        selectedPreOffset = offset
+                                                        NotificationHelper.savePrePrayerOffset(context, type, offset)
+                                                        NotificationHelper.schedulePrayerAlarms(context)
+                                                    },
+                                                    label = { Text(label, fontSize = 11.sp) },
+                                                    colors = FilterChipDefaults.filterChipColors(
+                                                        selectedContainerColor = palette.primary,
+                                                        selectedLabelColor = palette.onPrimary,
+                                                        containerColor = palette.surfaceVariant.copy(alpha = 0.3f),
+                                                        labelColor = palette.textSecondary
+                                                    )
+                                                )
+                                            }
+                                        }
+
+                                        Spacer(modifier = Modifier.height(10.dp))
+
+                                        // --- IQAMAH ALERT ---
+                                        Text(
+                                            text = LanguageManager.get("iqamah_reminder"),
+                                            style = MaterialTheme.typography.labelMedium.copy(
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = palette.textSecondary
+                                            )
+                                        )
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        val iqamahOffsets = listOf(0, 5, 10, 15, 20, 30)
+                                        var selectedIqamahOffset by remember {
+                                            mutableStateOf(NotificationHelper.getIqamahOffset(context, type))
+                                        }
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .horizontalScroll(rememberScrollState()),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            iqamahOffsets.forEach { offset ->
+                                                val isSelected = selectedIqamahOffset == offset
+                                                val label = if (offset == 0) LanguageManager.get("none") else "$offset ${LanguageManager.get("minutes_after")}"
+                                                FilterChip(
+                                                    selected = isSelected,
+                                                    onClick = {
+                                                        selectedIqamahOffset = offset
+                                                        NotificationHelper.saveIqamahOffset(context, type, offset)
+                                                        NotificationHelper.schedulePrayerAlarms(context)
+                                                    },
+                                                    label = { Text(label, fontSize = 11.sp) },
+                                                    colors = FilterChipDefaults.filterChipColors(
+                                                        selectedContainerColor = palette.primary,
+                                                        selectedLabelColor = palette.onPrimary,
+                                                        containerColor = palette.surfaceVariant.copy(alpha = 0.3f),
+                                                        labelColor = palette.textSecondary
+                                                    )
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                         if (index < targetPrayers.lastIndex) {
                             Spacer(modifier = Modifier.height(6.dp))
@@ -471,7 +594,10 @@ fun SettingsScreen(
                         val isSelected = currentThemeLang == lang.code
                         FilterChip(
                             selected = isSelected,
-                            onClick = { LanguageManager.saveLanguage(context, lang.code) },
+                            onClick = { 
+                                LanguageManager.saveLanguage(context, lang.code)
+                                viewModel.recalculate()
+                            },
                             label = { Text(lang.name) },
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = palette.primary,

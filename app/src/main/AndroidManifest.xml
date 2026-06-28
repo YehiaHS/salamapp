@@ -51,6 +51,9 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.LOCALE_CHANGED" />
             </intent-filter>
         </receiver>
 
@@ -59,7 +62,7 @@
             android:foregroundServiceType="mediaPlayback"
             android:exported="false" />
 
-        <!-- Home Screen Widget -->
+        <!-- Home Screen Widget (existing — now Medium style: 4×2) -->
         <receiver
             android:name=".widget.PrayerWidgetProvider"
             android:exported="true">
@@ -69,6 +72,42 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/prayer_widget_info" />
+        </receiver>
+
+        <!-- Small Widget (2×2): Next prayer name + time + countdown -->
+        <receiver
+            android:name=".widget.PrayerWidgetSmallProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/prayer_widget_small_info" />
+        </receiver>
+
+        <!-- Medium Widget (4×2): Next prayer + all 5 prayers row -->
+        <receiver
+            android:name=".widget.PrayerWidgetMediumProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/prayer_widget_medium_info" />
+        </receiver>
+
+        <!-- Large Widget (4×4): Full schedule + Hijri date + next prayer hero -->
+        <receiver
+            android:name=".widget.PrayerWidgetLargeProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/prayer_widget_large_info" />
         </receiver>
 
     </application>
