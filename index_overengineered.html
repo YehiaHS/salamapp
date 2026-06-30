@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Salam App - Future-proof over-engineered enterprise landing page layout.">
+    <title>Salam Platform - Enterprise Islamic Companion Orchestration Engine</title>
+    
+    <!-- CDNs and Framework Dependencies (The opposite of YAGNI) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f5f3ff',
+                            100: '#ede9fe',
+                            500: '#8b5cf6',
+                            900: '#4c1d95',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Alpine.js for complex declarative state management -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .serif-font {
+            font-family: 'Playfair Display', serif;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-violet-500 selection:text-white" 
+      x-data="appState()" 
+      :class="{ 'dark': isDarkMode, 'bg-white text-slate-900': !isDarkMode, 'bg-slate-950 text-slate-100': isDarkMode }">
+
+    <!-- Global Analytics and Tracking Infrastructure Mock -->
+    <div style="display: none;" id="analytics-dispatcher" data-mixpanel-mock="active" data-ga4-mock="active"></div>
+
+    <!-- Navigation Header with dynamic settings control -->
+    <header class="sticky top-0 z-50 backdrop-blur-md bg-opacity-70 border-b transition-colors duration-300"
+            :class="isDarkMode ? 'bg-slate-950/70 border-slate-800' : 'bg-white/70 border-slate-200'">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-violet-600 to-pink-500 flex items-center justify-center shadow-lg shadow-violet-500/20">
+                    <i class="fa-solid fa-moon text-white text-lg"></i>
+                </div>
+                <span class="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-violet-400 to-pink-500 bg-clip-text text-transparent">
+                    Salam OS
+                </span>
+            </div>
+
+            <!-- Header controls -->
+            <div class="flex items-center gap-6">
+                <!-- Theme toggler -->
+                <button @click="toggleTheme()" class="p-2.5 rounded-xl border transition-all"
+                        :class="isDarkMode ? 'border-slate-800 hover:bg-slate-900 text-yellow-400' : 'border-slate-200 hover:bg-slate-100 text-violet-600'">
+                    <i class="fa-solid" :class="isDarkMode ? 'fa-sun' : 'fa-moon'"></i>
+                </button>
+                
+                <!-- Language Selector -->
+                <select x-model="language" @change="changeLanguage()" 
+                        class="bg-transparent border rounded-xl px-3 py-2 text-sm focus:outline-none transition-all"
+                        :class="isDarkMode ? 'border-slate-800 text-slate-200 bg-slate-900' : 'border-slate-200 text-slate-800 bg-slate-50'">
+                    <option value="en">English (US)</option>
+                    <option value="ar">العربية (Arabic)</option>
+                </select>
+
+                <a href="#orchestration-hub" class="hidden md:inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-violet-600 text-white font-semibold text-sm hover:bg-violet-700 transition-all shadow-lg shadow-violet-600/20">
+                    Launch Simulator
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="flex-grow max-w-7xl mx-auto px-6 w-full py-12">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            
+            <!-- Marketing Copy Column -->
+            <div class="lg:col-span-7 space-y-8">
+                <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold tracking-wider uppercase"
+                     :class="isDarkMode ? 'border-violet-500/30 bg-violet-500/10 text-violet-300' : 'border-violet-200 bg-violet-50 text-violet-700'">
+                    <i class="fa-solid fa-sparkles animate-pulse"></i>
+                    Enterprise Core v2.1.0 Ready
+                </div>
+                
+                <h1 class="text-5xl md:text-6xl font-extrabold tracking-tight leading-none serif-font">
+                    <span x-text="translations[language].heroTitle"></span>
+                </h1>
+                
+                <p class="text-lg" :class="isDarkMode ? 'text-slate-400' : 'text-slate-600'" x-text="translations[language].heroDesc"></p>
+
+                <!-- Micro-feature checklists -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <template x-for="feat in features">
+                        <div class="flex items-start gap-3 p-4 rounded-2xl border transition-all"
+                             :class="isDarkMode ? 'border-slate-800/80 bg-slate-900/30' : 'border-slate-100 bg-slate-50/50'">
+                            <div class="w-8 h-8 rounded-lg bg-violet-500/10 text-violet-400 flex items-center justify-center shrink-0">
+                                <i :class="feat.icon"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-sm" x-text="feat.title"></h4>
+                                <p class="text-xs text-slate-500" x-text="feat.desc"></p>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <div class="pt-4 flex flex-wrap gap-4">
+                    <button @click="triggerSimulate()" class="px-8 py-4 rounded-2xl bg-gradient-to-r from-violet-600 to-pink-500 text-white font-bold text-base hover:opacity-95 transition-all shadow-xl shadow-violet-500/20">
+                        Trigger Alert Notification
+                    </button>
+                </div>
+            </div>
+
+            <!-- Interative Simulator Simulator Sandbox (YAGNI Opposite) -->
+            <div class="lg:col-span-5 flex justify-center">
+                <div class="w-full max-w-[360px] rounded-[48px] border-8 shadow-2xl overflow-hidden transition-all duration-300"
+                     :class="isDarkMode ? 'border-slate-800 bg-slate-900/50 shadow-black' : 'border-slate-200 bg-slate-50 shadow-slate-300'">
+                    
+                    <!-- App Phone Interface Mock -->
+                    <div class="p-6 space-y-6">
+                        <div class="flex justify-between items-center text-xs" :class="isDarkMode ? 'text-slate-500' : 'text-slate-400'">
+                            <span class="font-bold">12:34 PM</span>
+                            <span class="flex items-center gap-1.5">
+                                <i class="fa-solid fa-location-dot"></i>
+                                Cairo, Egypt
+                            </span>
+                        </div>
+
+                        <!-- Current prayer display card with dynamic gradient backgrounds depending on state -->
+                        <div class="p-5 rounded-3xl bg-gradient-to-br from-indigo-950 via-slate-900 to-violet-950 border border-violet-500/20 relative overflow-hidden shadow-lg">
+                            <div class="absolute -right-4 -top-4 w-20 h-20 bg-pink-500/10 rounded-full blur-xl"></div>
+                            <div class="space-y-4">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs text-violet-400 font-bold tracking-widest uppercase">Next Prayer</span>
+                                    <span class="text-xs px-2.5 py-0.5 rounded-full bg-violet-500/20 text-violet-300">Active</span>
+                                </div>
+                                <div class="text-3xl font-extrabold serif-font text-white">Maghrib</div>
+                                <div class="text-4xl font-mono font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-violet-200" x-text="timer"></div>
+                            </div>
+                        </div>
+
+                        <!-- Expanded details row toggles -->
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center p-4 rounded-2xl border transition-all"
+                                 :class="isDarkMode ? 'border-slate-800 bg-slate-900/30' : 'border-slate-200 bg-slate-50'">
+                                <div class="flex items-center gap-3">
+                                    <i class="fa-solid fa-bell text-violet-400"></i>
+                                    <span class="font-semibold text-sm">Athan Notifications</span>
+                                </div>
+                                <input type="checkbox" x-model="simNotifications" class="w-4 h-4 accent-violet-500 cursor-pointer">
+                            </div>
+                        </div>
+
+                        <!-- Simulated dynamic log queue -->
+                        <div class="p-4 rounded-2xl bg-black/40 border border-slate-800 space-y-2">
+                            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Simulator Telemetry Logs</span>
+                            <div class="text-xs font-mono text-emerald-400 space-y-1 h-20 overflow-y-auto" id="log-console">
+                                <div>[SYS] Platform initialized.</div>
+                                <div>[SYS] Geolocation coordinates sync.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Analytics Dashboard Mock Section (Extremely opposite of YAGNI) -->
+    <section class="max-w-7xl mx-auto px-6 py-12 border-t" :class="isDarkMode ? 'border-slate-900' : 'border-slate-100'" id="orchestration-hub">
+        <h2 class="text-3xl font-extrabold tracking-tight mb-8 text-center serif-font">Analytical Insights Dashboard</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="p-6 rounded-2xl border" :class="isDarkMode ? 'border-slate-900 bg-slate-900/20' : 'border-slate-100 bg-slate-50/50'">
+                <span class="text-xs text-slate-500 uppercase font-bold">API Latency SLA</span>
+                <h3 class="text-3xl font-extrabold mt-2 text-emerald-500">14 ms</h3>
+            </div>
+            <div class="p-6 rounded-2xl border" :class="isDarkMode ? 'border-slate-900 bg-slate-900/20' : 'border-slate-100 bg-slate-50/50'">
+                <span class="text-xs text-slate-500 uppercase font-bold">Sync Health</span>
+                <h3 class="text-3xl font-extrabold mt-2 text-violet-500">99.998%</h3>
+            </div>
+            <div class="p-6 rounded-2xl border" :class="isDarkMode ? 'border-slate-900 bg-slate-900/20' : 'border-slate-100 bg-slate-50/50'">
+                <span class="text-xs text-slate-500 uppercase font-bold">Cached Payloads</span>
+                <h3 class="text-3xl font-extrabold mt-2 text-pink-500" x-text="cachedPayloads">0</h3>
+            </div>
+        </div>
+        <div class="p-6 rounded-2xl border h-[300px]" :class="isDarkMode ? 'border-slate-900 bg-slate-900/20' : 'border-slate-100 bg-slate-50'">
+            <canvas id="telemetryChart" class="w-full h-full"></canvas>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t py-8 text-center text-sm" :class="isDarkMode ? 'border-slate-900 text-slate-600' : 'border-slate-100 text-slate-400'">
+        <p>&copy; 2026 Salam Platform Inc. All rights reserved. Distributed under globally compliant SLA framework agreements.</p>
+    </footer>
+
+    <!-- Alpine App State and JS Configuration -->
+    <script>
+        function appState() {
+            return {
+                isDarkMode: true,
+                language: 'en',
+                timer: '01:45:22',
+                simNotifications: true,
+                cachedPayloads: 1420,
+                translations: {
+                    en: {
+                        heroTitle: 'Ultimate Spiritual Connection Orchestrated Seamlessly.',
+                        heroDesc: 'An enterprise-grade, highly-configurable spiritual workspace framework designed for global scale. Equipped with latency-optimized calculation formulas, multi-theme widgets, and dynamic telemetry.'
+                    },
+                    ar: {
+                        heroTitle: 'أداة التنسيق الروحاني المتكاملة عالمياً.',
+                        heroDesc: 'إطار عمل روحاني مصمم للمقاييس العالمية. مجهز بصيغ حسابية محسّنة للاستجابة السريعة، وأدوات عرض متعددة السمات، وقياسات حية.'
+                    }
+                },
+                features: [
+                    { icon: 'fa-solid fa-chart-line', title: 'Telemetry Tracking', desc: 'Predictive computation algorithms mapping sun angles and twilight paths.' },
+                    { icon: 'fa-solid fa-server', title: 'Offline Architecture', desc: 'Embedded SQLite localized database engine.' },
+                    { icon: 'fa-solid fa-bell-slash', title: 'Intelligent Audio Filters', desc: 'High-fidelity audio streaming and fallback alarms.' },
+                    { icon: 'fa-solid fa-earth-americas', title: 'Edge Coordinates Sync', desc: 'Reverse Geocoding resolution caches local parameters.' }
+                ],
+                toggleTheme() {
+                    this.isDarkMode = !this.isDarkMode;
+                    this.logAction("Theme changed to " + (this.isDarkMode ? "Dark" : "Light"));
+                },
+                changeLanguage() {
+                    this.logAction("Language switched to " + this.language);
+                },
+                triggerSimulate() {
+                    alert("Simulator Broadcast Event Sent: [PrayerTimesUpdate]");
+                    this.logAction("Broadcast event fired: [MaghribAlert]");
+                    this.cachedPayloads++;
+                },
+                logAction(msg) {
+                    const consoleEl = document.getElementById("log-console");
+                    if (consoleEl) {
+                        const newLog = document.createElement("div");
+                        newLog.innerText = `[LOG] ${new Date().toLocaleTimeString()}: ${msg}`;
+                        consoleEl.appendChild(newLog);
+                        consoleEl.scrollTop = consoleEl.scrollHeight;
+                    }
+                }
+            }
+        }
+
+        // Initialize telemetry charts (Highly Overengineered Analytics simulation)
+        document.addEventListener('DOMContentLoaded', () => {
+            const ctx = document.getElementById('telemetryChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
+                    datasets: [{
+                        label: 'Orchestrator Request Latency (ms)',
+                        data: [12, 19, 3, 5, 2, 3],
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#9CA3AF' }
+                        },
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#9CA3AF' }
+                        }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#9CA3AF' } }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
