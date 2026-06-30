@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Salam - Premium, accessible, and precise prayer times application. Crafted for high performance.">
+    <title>Salam - Premium & Accessible Islamic Companion</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Design Tokens & CSS Variables */
+        :root {
+            --bg-base: #06040A;
+            --bg-surface: #0E0B16;
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --primary: #A78BFA;
+            --primary-rgb: 167, 139, 250;
+            --text-main: #F9FAFB;
+            --text-secondary: #9CA3AF;
+            --transition-smooth: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            --focus-ring: 0 0 0 3px rgba(167, 139, 250, 0.4);
+        }
+
+        /* Base Reset & Core Styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        /* Skip Link for Accessibility */
+        .skip-link {
+            position: absolute;
+            top: -100px;
+            left: 20px;
+            background: var(--primary);
+            color: var(--bg-base);
+            padding: 8px 16px;
+            font-weight: 700;
+            border-radius: 8px;
+            z-index: 999;
+            transition: top 0.2s;
+            text-decoration: none;
+        }
+        .skip-link:focus {
+            top: 20px;
+            outline: none;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        /* Header Navigation */
+        header {
+            border-bottom: 1px solid var(--border-subtle);
+            background: rgba(6, 4, 10, 0.8);
+            backdrop-filter: blur(16px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-content {
+            height: 80px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--text-main);
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--primary) 0%, #EC4899 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        /* Hero Layout */
+        .hero-section {
+            padding: 6rem 0;
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        @media (max-width: 850px) {
+            .hero-section {
+                grid-template-columns: 1fr;
+                text-align: center;
+                padding: 4rem 0;
+            }
+        }
+
+        .hero-heading {
+            font-size: clamp(2.5rem, 5.5vw, 3.8rem);
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -1.5px;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero-heading span {
+            background: linear-gradient(135deg, var(--primary) 0%, #F472B6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-paragraph {
+            font-size: 1.15rem;
+            color: var(--text-secondary);
+            margin-bottom: 2.5rem;
+            max-width: 520px;
+        }
+
+        @media (max-width: 850px) {
+            .hero-paragraph {
+                margin-left: auto;
+                margin-right: auto;
+            }
+        }
+
+        /* Focus & Button Styles */
+        .btn-action {
+            display: inline-flex;
+            align-items: center;
+            padding: 14px 28px;
+            background-color: var(--text-main);
+            color: var(--bg-base);
+            font-weight: 700;
+            border-radius: 12px;
+            text-decoration: none;
+            transition: var(--transition-smooth);
+            gap: 8px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-action:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn-action:focus-visible {
+            outline: none;
+            box-shadow: var(--focus-ring);
+        }
+
+        /* Live Device Graphic (CSS Only) */
+        .graphic-wrap {
+            display: flex;
+            justify-content: center;
+        }
+
+        .device-box {
+            width: 300px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 32px;
+            padding: 1.5rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .card-active {
+            background: rgba(var(--primary-rgb), 0.05);
+            border: 1px solid rgba(var(--primary-rgb), 0.15);
+            border-radius: 20px;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .label-heading {
+            font-size: 0.7rem;
+            color: var(--primary);
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+        }
+
+        .val-prayer {
+            font-size: 1.6rem;
+            font-weight: 800;
+        }
+
+        .val-timer {
+            font-size: 2.2rem;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+            color: var(--text-main);
+        }
+
+        /* Accessible Features Grid */
+        .features-section {
+            padding: 4rem 0;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2.5rem;
+        }
+
+        .feature-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .feature-icon-badge {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: rgba(var(--primary-rgb), 0.1);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .feature-item h3 {
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .feature-item p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        footer {
+            padding: 3rem 0;
+            border-top: 1px solid var(--border-subtle);
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <header>
+        <div class="container nav-content">
+            <a href="#" class="logo-wrap" aria-label="Salam Home">
+                <div class="logo-circle" aria-hidden="true">S</div>
+                <span>Salam</span>
+            </a>
+        </div>
+    </header>
+
+    <main id="main-content" class="container">
+        <section class="hero-section">
+            <div class="hero-text-wrap">
+                <h1 class="hero-heading">A premium, performant <span>Islamic Companion</span></h1>
+                <p class="hero-paragraph">Salam is built for clean, native platform speed, featuring precise calculation parameters and complete locale formatting.</p>
+                <a href="https://github.com/YehiaHS/salamapp" class="btn-action">
+                    <span>Get Started</span>
+                    <span aria-hidden="true">&rarr;</span>
+                </a>
+            </div>
+            
+            <div class="graphic-wrap" aria-hidden="true">
+                <div class="device-box">
+                    <div class="status-row">
+                        <span>١٠:٤٥ م</span>
+                        <span>مصر</span>
+                    </div>
+                    <div class="card-active">
+                        <div>
+                            <div class="label-heading">الصلوة القادمة</div>
+                            <div class="val-prayer">الشروق</div>
+                        </div>
+                        <div class="val-timer">٠١:٢٣:١٥</div>
+                    </div>
+                    <div class="status-row" style="justify-content: center;">
+                        <span>الآن: العشاء</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="features-section" aria-label="Product Features">
+            <div class="features-grid">
+                <article class="feature-item">
+                    <div class="feature-icon-badge" aria-hidden="true">1</div>
+                    <h3>Semantic Design</h3>
+                    <p>Designed with clean CSS custom properties and structured semantic HTML markup.</p>
+                </article>
+                <article class="feature-item">
+                    <div class="feature-icon-badge" aria-hidden="true">2</div>
+                    <h3>Optimal Accessibility</h3>
+                    <p>Includes skip links, ARIA labels, focus states, and high color contrast levels conforming to WCAG AA.</p>
+                </article>
+                <article class="feature-item">
+                    <div class="feature-icon-badge" aria-hidden="true">3</div>
+                    <h3>Platform Agnostic</h3>
+                    <p>Ultra lightweight footprint with zero heavy frameworks, bundle bloat, or slow JS engines.</p>
+                </article>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Salam. Built with pure code craftsmanship.</p>
+        </div>
+    </footer>
+
+</body>
+</html>
